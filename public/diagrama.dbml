@@ -1,0 +1,43 @@
+
+//MODULOS DE CATALOGOS
+
+Table Categorias {
+    id int [pk, increment]
+    nombre varchar (100) [not null]
+    descripcion text
+}
+
+
+Table Productos {
+    
+  id int [pk, increment]
+  categoria_id int [ref: > Categorias.id]
+  codigo varchar(50) [not null, unique]
+  nombre varchar(100) [not null]
+  descripcion text
+  stock int [default: 0]
+  precio_venta decimal(10,2) [not null]
+  imagen varchar(255)
+}
+
+
+// MODULOS ENTRADA (COMPRA DE STOCK)
+
+Table Compras {
+
+    id int [pk, increment ]
+    comprobante varchar(255)
+    fecha date
+    total decimal 
+}
+
+Table Detalle_compras {
+
+    id int [pk, increment]
+    compra_id int [ref: > Compras.id]
+    producto_id  int [ref: > Productos.id]
+    cantidad int 
+    precio_compra decimal
+}
+
+
