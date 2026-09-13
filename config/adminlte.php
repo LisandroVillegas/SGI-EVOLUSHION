@@ -332,6 +332,30 @@ return [
             'classes' => 'bg-gray text-white',
             'active' => ['admin/compras*'],
         ],
+        [
+            'text' => 'Turnos / Caja',
+            'url' => 'admin/turnos',
+            'icon' => 'fas fa-fw fa-cash-register',
+            'classes' => 'bg-gray text-white',
+            'active' => ['admin/turnos*'],
+        ],
+
+        [
+            'text' => 'Punto de Venta (POS)',
+            'url'  => 'admin/ventas/create',
+            'icon' => 'fas fa-fw fa-calculator',
+        ],
+        [
+            'text' => 'Historial de Ventas',
+            'url'  => 'admin/ventas',
+            'icon' => 'fas fa-fw fa-receipt',
+        ],
+        [
+            'text' => 'Reporte Diario',
+            'url'  => 'admin/reportes/diario',
+            'icon' => 'fas fa-fw fa-file-invoice-dollar',
+        ],
+
         
     ],
 

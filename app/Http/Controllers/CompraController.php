@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Compra;
 use App\Models\DetalleCompra;
 use App\Models\Producto;
+use App\Models\Turno; // <-- 1. Importamos el modelo Turno
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth; // <-- Importamos Auth
 use Illuminate\Support\Facades\DB;
 
 class CompraController extends Controller
@@ -24,6 +26,17 @@ class CompraController extends Controller
 
     public function store(Request $request)
     {
+        // 2. VERIFICACIÓN DE TURNO ABIERTO
+        $turnoActivo = Turno::where('user_id', Auth::id())
+            ->where('estado', 'abierto')
+            ->first();
+
+        if (!$turnoActivo) {
+            return redirect()->back()
+                ->with('mensaje', 'No tienes un turno/caja abierto. Abre un turno para registrar compras.')
+                ->with('icono', 'warning');
+        }
+
         $request->validate([
             'fecha' => 'required|date',
             'productos' => 'required|array|min:1',
@@ -32,7 +45,7 @@ class CompraController extends Controller
             'productos.*.precio_compra' => 'required|numeric|min:0',
         ]);
 
-        DB::transaction(function () use ($request) {
+        DB::transaction(function () use ($request, $turnoActivo) {
             // Autogeneración del comprobante si el usuario deja el campo en blanco
             $comprobante = $request->comprobante;
             if (empty($comprobante)) {
@@ -45,7 +58,9 @@ class CompraController extends Controller
                 $total += $p['cantidad'] * $p['precio_compra'];
             }
 
+            // 3. SE GUARDA EL COMPRA_ID ASOCIADO AL TURNO
             $compra = Compra::create([
+                'turno_id' => $turnoActivo->id, // <-- Vinculamos la compra con el turno abierto
                 'comprobante' => $comprobante,
                 'fecha' => $request->fecha,
                 'total' => $total,

@@ -10,6 +10,7 @@ class Compra extends Model
     use HasFactory;
 
     protected $fillable = [
+        'turno_id',
         'comprobante',
         'fecha',
         'total',

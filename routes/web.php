@@ -62,7 +62,6 @@ Route::delete('/admin/producto/{id}', [App\Http\Controllers\ProductoController::
 
 // Rutas para Compras
 
-// Rutas para Compras
 
 Route::get('/admin/compras', [App\Http\Controllers\CompraController::class, 'index'])->name('compras.index')
     ->middleware('auth');
@@ -86,4 +85,58 @@ Route::delete('/admin/compras/{id}', [App\Http\Controllers\CompraController::cla
     ->middleware('auth');
 
 
+// Rutas Para Turnos
 
+Route::get('/admin/turnos', [App\Http\Controllers\TurnoController::class, 'index'])->name('turnos.index')
+    ->middleware('auth');
+
+Route::get('/admin/turnos/create', [App\Http\Controllers\TurnoController::class, 'create'])->name('turnos.create')
+    ->middleware('auth');
+
+Route::post('/admin/turnos', [App\Http\Controllers\TurnoController::class, 'store'])->name('turnos.store')
+    ->middleware('auth');
+
+Route::get('/admin/turnos/{id}', [App\Http\Controllers\TurnoController::class, 'show'])->name('turnos.show')
+    ->middleware('auth');
+
+Route::get('/admin/turnos/{id}/edit', [App\Http\Controllers\TurnoController::class, 'edit'])->name('turnos.edit')
+    ->middleware('auth');
+
+Route::put('/admin/turnos/{id}', [App\Http\Controllers\TurnoController::class, 'update'])->name('turnos.update')
+    ->middleware('auth');
+
+Route::delete('/admin/turnos/{id}', [App\Http\Controllers\TurnoController::class, 'destroy'])->name('turnos.destroy')
+    ->middleware('auth');
+
+// Ruta Para Ventas Olvidadas duerante el turno
+
+Route::post('/admin/turnos/registrar-venta-olvidada', [App\Http\Controllers\TurnoController::class, 'registrarVentaOlvidada'])
+    ->name('turnos.registrarVentaOlvidada')
+     ->middleware('auth');
+
+
+// Rutas para Ventas / POS
+
+Route::get('/admin/ventas', [App\Http\Controllers\VentaController::class, 'index'])->name('ventas.index')
+    ->middleware('auth');
+
+Route::get('/admin/ventas/create', [App\Http\Controllers\VentaController::class, 'create'])->name('ventas.create')
+    ->middleware('auth');
+
+Route::post('/admin/ventas', [App\Http\Controllers\VentaController::class, 'store'])->name('ventas.store')
+    ->middleware('auth');
+
+Route::get('/admin/ventas/{id}', [App\Http\Controllers\VentaController::class, 'show'])->name('ventas.show')
+    ->middleware('auth');
+
+Route::delete('/admin/ventas/{id}', [App\Http\Controllers\VentaController::class, 'destroy'])->name('ventas.destroy')
+    ->middleware('auth');
+
+    //RUTAS PARA FIADOS
+  Route::patch('/admin/ventas/{id}/pagar-fiado', [App\Http\Controllers\VentaController::class, 'pagarFiado'])
+    ->name('ventas.pagarFiado')
+    ->middleware('auth');
+    
+// Rutas para Reportes Diarios
+    Route::get('/admin/reportes/diario', [App\Http\Controllers\ReporteController::class, 'index'])->name('reportes.diario');
+    Route::get('/admin/reportes/diario/pdf', [App\Http\Controllers\ReporteController::class, 'exportarPdf'])->name('reportes.diario.pdf');
