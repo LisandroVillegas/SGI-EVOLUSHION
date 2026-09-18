@@ -44,6 +44,9 @@
                     </div>
                     <div class="col-md-6">
                         <p><strong>Total Ventas en Efectivo:</strong> <span class="text-success font-weight-bold">${{ number_format($totalVentasEfectivo ?? 0, 0, ',', '.') }}</span></p>
+                        @if(($totalFiadoCobrado ?? 0) > 0)
+                            <p><strong>Cobro de Fiados (Efectivo):</strong> <span class="text-info font-weight-bold">+${{ number_format($totalFiadoCobrado, 0, ',', '.') }}</span></p>
+                        @endif
                         <p><strong>Total Compras de Insumos:</strong> <span class="text-danger font-weight-bold">${{ number_format($totalCompras ?? 0, 0, ',', '.') }}</span></p>
                         <p><strong>Sueldo / Pago Trabajadora:</strong> <span class="text-info font-weight-bold">${{ number_format($pagoTrabajadora ?? 0, 0, ',', '.') }}</span></p>
                         <p><strong>Dinero Esperado en Caja:</strong> <span class="text-primary font-weight-bold">${{ number_format($dineroEsperado ?? 0, 0, ',', '.') }}</span></p>

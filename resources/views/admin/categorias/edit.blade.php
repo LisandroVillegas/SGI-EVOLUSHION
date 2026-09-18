@@ -25,7 +25,7 @@
                   </div>
                   <!-- /.card-header -->
                   <div class="card-body" style="box-sizing: border-box; display: block;">
-                    <form action="{{ url('/admin/categoria/'.$categoria->id)  }}" method="POST">
+                    <form action="{{ url('/admin/categoria/'.$categoria->id)  }}" method="POST" >
                         @csrf
                         @method('PUT')
                         <div class="row">
@@ -96,5 +96,8 @@
 @stop
 
 @section('js')
+@include('admin.partials.pin-security')
    
 @stop
+
+

@@ -1,13 +1,11 @@
-@extends('adminlte::page')
-
-
+﻿@extends('adminlte::page')
 
 @section('content_header')
 <nav aria-label="breadcrumb" style="font-size: 18pt">
   <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="{{ url('/admin') }}">Inicio</a></li>
-    <li class="breadcrumb-item"><a href="{{ url('/admin/categorias') }}">Categorias</a></li>
-    <li class="breadcrumb-item active" aria-current="page">Lista de Categorias</li>
+    <li class="breadcrumb-item"><a href="{{ url('/admin/categorias') }}">Categorías</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Lista de Categorías</li>
   </ol>
 </nav>
 <hr>
@@ -16,164 +14,105 @@
 @section('content')
 <div class="row">
     <div class="col-md-12">
-                <div class="card card-outline card-primary">
-                  <div class="card-header">
-                    <h3 class="card-title">Categorias Registrados</h3>
-
-                    <div class="card-tools">
-                      <a  class="btn btn-primary" href="{{ url('/admin/categorias/create') }}">Crear Nuevo</a>
-                    </div>
-                    <!-- /.card-tools -->
-                  </div>
-                  <!-- /.card-header -->
-                  <div class="card-body" style="box-sizing: border-box; display: block;">
-
-                    <table id="example1" class="table table-striped table-bordered table-hover table-sm">
-    <thead>
-        <tr>
-            <th style="text-align: center">Nro</th>
-            <th style="text-align: center">Nombre</th>
-            <th style="text-align: center">Descripcion</th>
-            <th style="text-align: center">Acciones</th>
-        </tr>
-    </thead>
-
-    <tbody>
-        @foreach ($categorias as $categoria)
-            <tr>
-                <td style="text-align: center">{{ $loop->iteration }}</td>
-                <td style="text-align: center">{{ $categoria->nombre }}</td>
-                <td style="text-align: center">{{ $categoria->descripcion }}</td>
-
-                <td style="text-align: center">
-
-                    <div style="display: flex; justify-content: center; align-items: center; gap: 8px;">
-
-                        {{-- BOTÓN VER --}}
-                        <a href="{{ url('/admin/categoria/'.$categoria->id) }}"
-                           class="btn btn-info">
-                            <i class="fas fa-eye"></i> Ver
-                        </a>
-
-                        {{-- BOTÓN EDITAR --}}
-                        <a href="{{ url('/admin/categoria/'.$categoria->id.'/edit') }}"
-                           class="btn btn-warning">
-                            <i class="fas fa-edit"></i> Editar
-                        </a>
-
-                        {{-- BOTÓN ELIMINAR --}}
-                        <form action="{{ url('/admin/categoria/'.$categoria->id) }}"
-                              id="miformulario{{ $categoria->id }}"
-                              method="POST"
-                              style="margin: 0;">
-
-                            @csrf
-                            @method('DELETE')
-
-                            <button type="submit"
-                                    class="btn btn-danger"
-                                    onclick="preguntar{{ $categoria->id }}(event)">
-                                <i class="fas fa-trash"></i> Eliminar
-                            </button>
-
-                        </form>
-
-                    </div>
-
-                    <script>
-                        function preguntar{{ $categoria->id }}(event) {
-
-                            event.preventDefault();
-
-                            Swal.fire({
-                                title: "¿Desea eliminar este registro?",
-                                text: "",
-                                icon: "question",
-                                showCancelButton: true,
-                                confirmButtonColor: "#3085d6",
-                                cancelButtonColor: "#d33",
-                                confirmButtonText: "Si, eliminar",
-                                denyButtonText: "No, cancelar"
-                            }).then((result) => {
-
-                                if (result.isConfirmed) {
-
-                                    document.getElementById(
-                                        'miformulario{{ $categoria->id }}'
-                                    ).submit();
-
-                                }
-
-                            });
-                        }
-                    </script>
-
-                </td>
-            </tr>
-        @endforeach
-    </tbody>
-
-</table>
-                  </div>
-                  <!-- /.card-body -->
+        <div class="card card-outline card-primary">
+            <div class="card-header">
+                <h3 class="card-title">Categorías Registradas</h3>
+                <div class="card-tools">
+                    <a class="btn btn-primary" href="{{ url('/admin/categorias/create') }}">Crear Nuevo</a>
                 </div>
-                <!-- /.card -->
-              </div>
+            </div>
+            <div class="card-body">
+                <table id="example1" class="table table-striped table-bordered table-hover table-sm">
+                    <thead>
+                        <tr>
+                            <th style="text-align: center">Nro</th>
+                            <th style="text-align: center">Nombre</th>
+                            <th style="text-align: center">Descripción</th>
+                            <th style="text-align: center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($categorias as $categoria)
+                            <tr>
+                                <td style="text-align: center; vertical-align: middle;">{{ $loop->iteration }}</td>
+                                <td style="text-align: center; vertical-align: middle;">{{ $categoria->nombre }}</td>
+                                <td style="text-align: center; vertical-align: middle;">{{ $categoria->descripcion }}</td>
+                                <td style="text-align: center; vertical-align: middle;">
+                                    <div style="display: flex; justify-content: center; align-items: center; gap: 4px;">
+                                        <!-- Botón Ver con texto -->
+                                        <a href="{{ url('/admin/categoria/'.$categoria->id) }}" class="btn btn-info btn-sm font-weight-bold shadow-sm" title="Ver">
+                                            <i class="fas fa-eye mr-1"></i> Ver
+                                        </a>
+                                        
+                                        <!-- Botón Editar con texto -->
+                                        <a href="{{ url('/admin/categoria/'.$categoria->id.'/edit') }}" class="btn btn-warning btn-sm font-weight-bold shadow-sm" title="Editar">
+                                            <i class="fas fa-edit mr-1"></i> Editar
+                                        </a>
+
+                                        <!-- Botón Eliminar con texto protegido por PIN (.form-secured) -->
+                                        <form action="{{ url('/admin/categoria/'.$categoria->id) }}" method="POST" class="d-inline form-secured" data-secured-message="¿Desea eliminar esta categoría?">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger btn-sm font-weight-bold shadow-sm text-white" title="Eliminar">
+                                                <i class="fas fa-trash-alt mr-1"></i> Eliminar
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
-   
 @stop
 
 @section('css')
     <style>
-    /* Fondo transparente y sin borde en el contenedor */
     #example1_wrapper .dt-buttons {
         background-color: transparent;
         box-shadow: none;
         border: none;
         display: flex;
-        justify-content: center; /* Centrar los botones */
-        gap: 10px; /* Espaciado entre botones */
-        margin-bottom: 15px; /* Separar botones de la tabla */
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 15px;
     }
-
-    /* Estilo personalizado para los botones */
-    #example1_wrapper .btn {
-        color: #fff; /* Color del texto en blanco */
-        border-radius: 4px; /* Bordes redondeados */
-        padding: 5px 15px; /* Espaciado interno */
-        font-size: 14px; /* TamaÃ±o de fuente */
+    #example1_wrapper .dt-buttons .btn {
+        color: #fff;
+        border-radius: 4px;
+        padding: 5px 15px;
+        font-size: 14px;
     }
-
-    /* Colores por tipo de botÃ³n */
     .btn-danger { background-color: #dc3545; border: none; }
     .btn-success { background-color: #28a745; border: none; }
     .btn-info { background-color: #17a2b8; border: none; }
     .btn-warning { background-color: #ffc107; color: #212529; border: none; }
     .btn-default { background-color: #6e7176; color: #212529; border: none; }
-
-    
-</style>
-
+    </style>
 @stop
 
 @section('js')
-   <script>
-     $(function () {
+@include('admin.partials.pin-security')
+<script>
+    $(function () {
         $("#example1").DataTable({
             "pageLength": 10,
             "language": {
-                "emptyTable": "No hay informacion",
-                "info": "Mostrando _START_ a _END_ de _TOTAL_ Categorias",
-                "infoEmpty": "Mostrando 0 a 0 de 0 Categorias",
-                "infoFiltered": "(Filtrado de _MAX_ total Categorias)",
-                "lengthMenu": "Mostrar _MENU_ Categorias",
+                "emptyTable": "No hay información",
+                "info": "Mostrando _START_ a _END_ de _TOTAL_ Categorías",
+                "infoEmpty": "Mostrando 0 a 0 de 0 Categorías",
+                "infoFiltered": "(Filtrado de _MAX_ total Categorías)",
+                "lengthMenu": "Mostrar _MENU_ Categorías",
                 "loadingRecords": "Cargando...",
                 "processing": "Procesando...",
                 "search": "Buscador:",
                 "zeroRecords": "Sin resultados encontrados",
                 "paginate": {
                     "first": "Primero",
-                    "last": "Ultimo",
+                    "last": "Último",
                     "next": "Siguiente",
                     "previous": "Anterior"
                 }
@@ -190,5 +129,5 @@
             ]
         }).buttons().container().appendTo('#example1_wrapper .row:eq(0)');
     });
-   </script>
+</script>
 @stop

@@ -23,12 +23,12 @@
                     @endphp
 
                     @if($miTurnoActivo)
-                        <a class="btn btn-warning mr-2" href="{{ url('/admin/turnos/'.$miTurnoActivo->id.'/edit') }}">
-                            <i class="fas fa-lock"></i> Cerrar Mi Turno
+                        <a class="btn btn-warning font-weight-bold shadow-sm" href="{{ url('/admin/turnos/'.$miTurnoActivo->id.'/edit') }}" title="Ir al arqueo y cierre de tu turno activo">
+                            <i class="fas fa-lock mr-1"></i> Cerrar Mi Turno
                         </a>
                     @else
-                        <a class="btn btn-primary" href="{{ url('/admin/turnos/create') }}">
-                            <i class="fas fa-plus"></i> Abrir Nuevo Turno
+                        <a class="btn btn-primary font-weight-bold shadow-sm" href="{{ url('/admin/turnos/create') }}">
+                            <i class="fas fa-plus-circle mr-1"></i> Abrir Nuevo Turno
                         </a>
                     @endif
                 </div>
@@ -47,15 +47,22 @@
                     </thead>
                     <tbody>
                         @foreach ($turnos as $turno)
-                            <tr>
+                            <tr @if($turno->estado === 'abierto') style="background-color: #fffdf2;" @endif>
                                 <td style="text-align: center">{{ $loop->iteration }}</td>
-                                <td style="text-align: center">{{ $turno->user->name }}</td>
+                                <td style="text-align: center">
+                                    {{ $turno->user->name }}
+                                    @if($turno->user_id === Auth::id() && $turno->estado === 'abierto')
+                                        <span class="badge badge-info ml-1" style="font-size: 8pt;"><i class="fas fa-user-check"></i> Tú</span>
+                                    @endif
+                                </td>
                                 <td style="text-align: center">{{ $turno->fecha_inicio }}</td>
                                 <td style="text-align: center">${{ number_format($turno->base_caja, 0, ',', '.') }}</td>
                                 <td style="text-align: center">
 
                                     @if($turno->estado == 'abierto')
-                                        <span class="badge badge-primary">Abierto</span>
+                                        <span class="badge badge-success px-2 py-1 shadow-sm font-weight-bold">
+                                            <i class="fas fa-circle mr-1" style="font-size: 7px; vertical-align: middle;"></i> Abierto
+                                        </span>
                                     @elseif(abs((float)$turno->total_descuadre_dinero) < 0.01)
                                         <span class="badge badge-success">Cerrado OK</span>
                                     @else
@@ -64,31 +71,19 @@
 
                                 </td>
                                 <td style="text-align: center">
-                                    <div style="display: flex; justify-content: center; align-items: center; gap: 8px;">
-                                        <a href="{{ url('/admin/turnos/'.$turno->id) }}" class="btn btn-info btn-sm"><i class="fas fa-eye"></i> Ver</a>
-                                        <form action="{{ url('/admin/turnos/'.$turno->id) }}" id="miformulario{{ $turno->id }}" method="POST" style="margin: 0;">
+                                    <div style="display: flex; justify-content: center; align-items: center; gap: 6px;">
+                                        <a href="{{ url('/admin/turnos/'.$turno->id) }}" class="btn btn-info btn-sm font-weight-bold shadow-sm" title="Ver información del turno">
+                                            <i class="fas fa-eye mr-1"></i> Ver
+                                        </a>
+
+                                        <form action="{{ url('/admin/turnos/'.$turno->id) }}" method="POST" class="d-inline form-secured" data-secured-message="¿Desea eliminar el Turno #{{ $turno->id }}?">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-danger btn-sm" onclick="preguntar{{ $turno->id }}(event)"><i class="fas fa-trash"></i> Eliminar</button>
+                                            <button type="submit" class="btn btn-danger btn-sm font-weight-bold shadow-sm text-white" title="Eliminar Turno">
+                                                <i class="fas fa-trash-alt mr-1"></i> Eliminar
+                                            </button>
                                         </form>
                                     </div>
-                                    <script>
-                                        function preguntar{{ $turno->id }}(event) {
-                                            event.preventDefault();
-                                            Swal.fire({
-                                                title: "¿Desea eliminar este registro?",
-                                                icon: "question",
-                                                showCancelButton: true,
-                                                confirmButtonColor: "#3085d6",
-                                                cancelButtonColor: "#d33",
-                                                confirmButtonText: "Sí, eliminar"
-                                            }).then((result) => {
-                                                if (result.isConfirmed) {
-                                                    document.getElementById('miformulario{{ $turno->id }}').submit();
-                                                }
-                                            });
-                                        }
-                                    </script> 
                                 </td>
                             </tr>
                         @endforeach
@@ -112,7 +107,7 @@
         margin-bottom: 15px;
     }
 
-    #example1_wrapper .btn {
+    #example1_wrapper .dt-buttons .btn {
         color: white;
         border-radius: 4px;
         padding: 5px 15px;
@@ -128,8 +123,12 @@
 @stop
 
 @section('js')
+@include('admin.partials.pin-security')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-     $(function () {
+    
+
+    $(function () {
         $("#example1").DataTable({
             "pageLength": 10,
             "language": {

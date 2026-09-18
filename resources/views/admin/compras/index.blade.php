@@ -35,38 +35,26 @@
                     <tbody>
                         @foreach ($compras as $compra)
                             <tr>
-                                <td style="text-align: center">{{ $loop->iteration }}</td>
-                                <td style="text-align: center">{{ $compra->comprobante ?? 'S/N' }}</td>
-                                <td style="text-align: center">{{ $compra->fecha }}</td>
-                                <td style="text-align: center">${{ number_format($compra->total, 0, ',', '.') }}</td>
-                                <td style="text-align: center">
-                                    <div style="display: flex; justify-content: center; align-items: center; gap: 8px;">
-                                        <a href="{{ url('/admin/compras/'.$compra->id) }}" class="btn btn-info"><i class="fas fa-eye"></i> Ver</a>
+                                <td style="text-align: center; vertical-align: middle;">{{ $loop->iteration }}</td>
+                                <td style="text-align: center; vertical-align: middle;">{{ $compra->comprobante ?? 'S/N' }}</td>
+                                <td style="text-align: center; vertical-align: middle;">{{ $compra->fecha }}</td>
+                                <td style="text-align: center; vertical-align: middle;">${{ number_format($compra->total, 0, ',', '.') }}</td>
+                                <td style="text-align: center; vertical-align: middle;">
+                                    <div style="display: flex; justify-content: center; align-items: center; gap: 4px;">
+                                        <!-- Botón Ver con texto -->
+                                        <a href="{{ url('/admin/compras/'.$compra->id) }}" class="btn btn-info btn-sm font-weight-bold shadow-sm" title="Ver">
+                                            <i class="fas fa-eye mr-1"></i> Ver
+                                        </a>
                                         
-                                        <form action="{{ url('/admin/compras/'.$compra->id) }}" id="miformulario{{ $compra->id }}" method="POST" style="margin: 0;">
+                                        <!-- Botón Eliminar con texto protegido por PIN (.form-secured) -->
+                                        <form action="{{ url('/admin/compras/'.$compra->id) }}" method="POST" class="d-inline form-secured" data-secured-message="&iquest;Desea eliminar esta compra?">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-danger" onclick="preguntar{{ $compra->id }}(event)"><i class="fas fa-trash"></i> Eliminar</button>
+                                            <button type="submit" class="btn btn-danger btn-sm font-weight-bold shadow-sm text-white" title="Eliminar">
+                                                <i class="fas fa-trash-alt mr-1"></i> Eliminar
+                                            </button>
                                         </form>
                                     </div>
-                                    <script>
-                                        function preguntar{{ $compra->id }}(event) {
-                                            event.preventDefault();
-                                            Swal.fire({
-                                                title: "¿Desea eliminar esta compra?",
-                                                text: "El stock ingresado se restará automáticamente del inventario.",
-                                                icon: "question",
-                                                showCancelButton: true,
-                                                confirmButtonColor: "#3085d6",
-                                                cancelButtonColor: "#d33",
-                                                confirmButtonText: "Sí, eliminar"
-                                            }).then((result) => {
-                                                if (result.isConfirmed) {
-                                                    document.getElementById('miformulario{{ $compra->id }}').submit();
-                                                }
-                                            });
-                                        }
-                                    </script>
                                 </td>
                             </tr>
                         @endforeach
@@ -90,7 +78,7 @@
         margin-bottom: 15px;
     }
 
-    #example1_wrapper .btn {
+    #example1_wrapper .dt-buttons .btn {
         color: white;
         border-radius: 4px;
         padding: 5px 15px;
@@ -106,7 +94,7 @@
 @stop
 
 @section('js')
-
+@include('admin.partials.pin-security')
 
 <script>
     $(function () {
@@ -133,7 +121,7 @@
             "lengthChange": true,
             "autoWidth": false,
             buttons: [
-                { text: '<i class="fas fa-copy"></i> COPIAR', extend: 'copy', className: 'btn btn-secondary' },
+                { text: '<i class="fas fa-copy"></i> COPIAR', extend: 'copy', className: 'btn btn-default' },
                 { text: '<i class="fas fa-file-pdf"></i> PDF', extend: 'pdf', className: 'btn btn-danger' },
                 { text: '<i class="fas fa-file-csv"></i> CSV', extend: 'csv', className: 'btn btn-info' },
                 { text: '<i class="fas fa-file-excel"></i> EXCEL', extend: 'excel', className: 'btn btn-success' },

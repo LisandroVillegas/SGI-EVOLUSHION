@@ -55,6 +55,12 @@
                         </div>
                     </div>
 
+                    @if($totalFiadoCobrado > 0)
+                        <div class="alert alert-info py-1 px-2 mb-2 text-center small">
+                            <i class="fas fa-hand-holding-usd mr-1"></i> (+) Cobro de Fiados en Caja: <strong>${{ number_format($totalFiadoCobrado, 0, ',', '.') }}</strong>
+                        </div>
+                    @endif
+
                     {{-- Campo de Pago a Trabajadora --}}
                     <div class="form-group mb-3">
                         <label for="pago_trabajadora" class="font-weight-bold text-dark mb-1">
@@ -250,6 +256,7 @@
         let ventasOlvidadas = [];
         let totalComprasTurno = parseFloat("{{ $totalCompras }}") || 0;
         let totalVentasEfectivoTurno = parseFloat("{{ $totalVentasEfectivo }}") || 0;
+        let totalFiadoCobradoTurno = parseFloat("{{ $totalFiadoCobrado }}") || 0;
         let baseCaja = parseFloat("{{ $turno->base_caja }}") || 0;
         let listaCompras = @json($detalleComprasTexto ?? []);
 
@@ -269,7 +276,7 @@
 
         function recalcularDineroEsperado() {
             let pagoTrabajadora = parseFloat($('#pago_trabajadora').val()) || 0;
-            let nuevoDineroEsperado = (baseCaja + totalVentasEfectivoTurno) - totalComprasTurno - pagoTrabajadora;
+            let nuevoDineroEsperado = (baseCaja + totalVentasEfectivoTurno + totalFiadoCobradoTurno) - totalComprasTurno - pagoTrabajadora;
 
             $('#dinero_esperado_caja').data('valor', nuevoDineroEsperado).val(nuevoDineroEsperado);
             $('#texto_dinero_esperado').text('$' + nuevoDineroEsperado.toLocaleString('es-CO'));
@@ -283,6 +290,10 @@
 
             if (totalVentasEfectivoTurno > 0) {
                 novedades.push("VENTAS REGISTRADAS POS (EFECTIVO): +$" + totalVentasEfectivoTurno.toLocaleString('es-CO'));
+            }
+
+            if (totalFiadoCobradoTurno > 0) {
+                novedades.push("COBRO DE FIADOS (EFECTIVO): +$" + totalFiadoCobradoTurno.toLocaleString('es-CO'));
             }
 
             if (listaCompras.length > 0) {

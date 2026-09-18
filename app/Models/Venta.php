@@ -12,6 +12,7 @@ class Venta extends Model
     protected $fillable = [
         'user_id',
         'turno_id',
+        'turno_pago_id',
         'total',
         'metodo_pago',
         'tipo_pago',
@@ -20,6 +21,8 @@ class Venta extends Model
         'aplica_promocion',
         'cliente_fiado',
         'estado_pago',
+        'fecha_pago',
+        'metodo_pago_saldo',
         'observaciones', // <-- Agregado para permitir asignación masiva
     ];
 
@@ -29,10 +32,16 @@ class Venta extends Model
         return $this->belongsTo(User::class);
     }
 
-    // Relación con el turno en el que se realizó la venta
+    // Relación con el turno en el que se realizó la venta (donde salieron los productos)
     public function turno()
     {
         return $this->belongsTo(Turno::class);
+    }
+
+    // Relación con el turno en el que se cobró la venta fiada (donde ingresó el dinero)
+    public function turnoPago()
+    {
+        return $this->belongsTo(Turno::class, 'turno_pago_id');
     }
 
     // Relación con los productos/detalles de la venta

@@ -90,3 +90,7 @@
     </div>
 </div>
 @stop
+@section('js')
+@include('admin.partials.pin-security')
+@stop
+

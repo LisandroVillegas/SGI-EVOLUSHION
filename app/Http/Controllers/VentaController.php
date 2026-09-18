@@ -10,6 +10,7 @@ use App\Models\Turno;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class VentaController extends Controller
 {
@@ -221,10 +222,12 @@ class VentaController extends Controller
             $monto = $venta->total;
             $metodo = $request->metodo_pago_saldo;
 
-            // Reasignar la venta al turno activo donde se realiza el cobro
-            $venta->turno_id = $turnoActivo->id;
-            $venta->estado_pago = 'pagado';
-            $venta->metodo_pago = $metodo;
+            // Preservar el turno_id original (para que el inventario del turno de origen no se descuadre)
+            // y registrar el turno_pago_id para que el dinero ingrese a la caja del turno activo
+            $venta->turno_pago_id    = $turnoActivo->id;
+            $venta->fecha_pago       = \Carbon\Carbon::now();
+            $venta->metodo_pago_saldo = $metodo;
+            $venta->estado_pago      = 'pagado';
 
             if ($metodo === 'efectivo') {
                 $venta->pago_efectivo = $monto;
@@ -275,7 +278,14 @@ class VentaController extends Controller
         DB::beginTransaction();
 
         try {
-            $venta = Venta::with('detalles')->findOrFail($id);
+            $venta = Venta::with(['detalles', 'turno'])->findOrFail($id);
+
+            // Blindaje: No permitir eliminar ventas de turnos que ya fueron cerrados
+            if ($venta->turno && $venta->turno->estado !== 'abierto') {
+                return redirect()->route('ventas.index')
+                    ->with('mensaje', 'No puedes eliminar una venta de un turno que ya ha sido cerrado para proteger el historial contable.')
+                    ->with('icono', 'warning');
+            }
 
             foreach ($venta->detalles as $detalle) {
                 $producto = Producto::find($detalle->producto_id);

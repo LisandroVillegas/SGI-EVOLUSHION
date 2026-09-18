@@ -94,9 +94,16 @@ class CompraController extends Controller
 
     public function destroy($id)
     {
-        DB::transaction(function () use ($id) {
-            $compra = Compra::with('detalles')->findOrFail($id);
+        $compra = Compra::with(['detalles', 'turno'])->findOrFail($id);
 
+        // Blindaje: No permitir eliminar compras de turnos que ya fueron cerrados
+        if ($compra->turno && $compra->turno->estado !== 'abierto') {
+            return redirect()->to('/admin/compras')
+                ->with('mensaje', 'No puedes eliminar una compra de un turno que ya ha sido cerrado para proteger el historial contable.')
+                ->with('icono', 'warning');
+        }
+
+        DB::transaction(function () use ($compra) {
             // Restar del stock las cantidades de los productos de esta compra
             foreach ($compra->detalles as $detalle) {
                 $producto = Producto::find($detalle->producto_id);

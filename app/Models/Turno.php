@@ -40,8 +40,15 @@ class Turno extends Model
         return $this->hasMany(Compra::class);
     }
 
+    // Relación con las ventas originadas en este turno (donde salieron los productos)
     public function ventas()
     {
-        return $this->hasMany(Venta::class);
+        return $this->hasMany(Venta::class, 'turno_id');
+    }
+
+    // Relación con los fiados que se cobraron durante este turno (dinero ingresado a caja)
+    public function cobrosFiados()
+    {
+        return $this->hasMany(Venta::class, 'turno_pago_id');
     }
 }

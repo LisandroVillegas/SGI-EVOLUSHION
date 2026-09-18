@@ -135,32 +135,47 @@ class ReporteController extends Controller
         $totalFiadoNuevo = $fiadosDelDia->sum('total');
 
         // ==========================================
-        // FIADOS COBRADOS HOY 
+        // FIADOS COBRADOS EN EL PERÍODO / TURNO
         // ==========================================
-        $cobrosFiadosDia = Venta::with(['user', 'detalles.producto'])
-            ->where('estado_pago', 'pagado')
-            ->where(function($query) use ($fecha, $inicioDia) {
-                $query->whereDate('updated_at', $fecha)
-                      ->orWhereBetween('updated_at', [$inicioDia, Carbon::now()]);
-            })
-            ->get()
-            ->filter(function($venta) use ($inicioDia) {
-                if (Carbon::parse($venta->created_at)->lt($inicioDia)) {
-                    return true;
-                }
-                return Carbon::parse($venta->created_at)->gte($inicioDia) && Carbon::parse($venta->updated_at)->gt($venta->created_at);
-            });
+        if ($turno) {
+            $cobrosFiadosDia = Venta::with(['user', 'detalles.producto'])
+                ->where('estado_pago', 'pagado')
+                ->where(function($query) use ($turno, $inicioDia, $finDia) {
+                    $query->where('turno_pago_id', $turno->id)
+                          ->orWhere(function($sub) use ($inicioDia, $finDia) {
+                              $sub->whereNotNull('fecha_pago')
+                                  ->whereBetween('fecha_pago', [$inicioDia, $finDia]);
+                          })
+                          ->orWhere(function($subLegacy) use ($inicioDia, $finDia) {
+                              $subLegacy->whereNull('turno_pago_id')
+                                        ->whereNotNull('cliente_fiado')
+                                        ->whereBetween('updated_at', [$inicioDia, $finDia])
+                                        ->whereColumn('updated_at', '>', 'created_at');
+                          });
+                })
+                ->get();
+        } else {
+            $cobrosFiadosDia = Venta::with(['user', 'detalles.producto'])
+                ->where('estado_pago', 'pagado')
+                ->where(function($query) use ($fecha, $inicioDia, $finDia) {
+                    $query->whereBetween('fecha_pago', [$inicioDia, $finDia])
+                          ->orWhereDate('fecha_pago', $fecha)
+                          ->orWhere(function($subLegacy) use ($fecha) {
+                              $subLegacy->whereNull('turno_pago_id')
+                                        ->whereNotNull('cliente_fiado')
+                                        ->whereDate('updated_at', $fecha)
+                                        ->whereColumn('updated_at', '>', 'created_at');
+                          });
+                })
+                ->get();
+        }
 
         $totalCobradoFiados = $cobrosFiadosDia->sum('total');
 
         // Ventas normales de contado del período
         $ventasContadoHoy = $ventas->where('estado_pago', 'pagado')
-            ->filter(function($venta) use ($inicioDia) {
-                if (Carbon::parse($venta->created_at)->gte($inicioDia) && Carbon::parse($venta->updated_at)->gt($venta->created_at)) {
-                    return false; 
-                }
-                return true;
-            });
+            ->where('metodo_pago', '!=', 'fiado')
+            ->whereNull('cliente_fiado');
 
         // Totales financieros
         $totalVendido = $ventasContadoHoy->sum('total') + $totalCobradoFiados;
@@ -169,16 +184,14 @@ class ReporteController extends Controller
         $efectivoVentasHoy = $ventasContadoHoy->where('metodo_pago', 'efectivo')->sum('total') 
             + $ventasContadoHoy->where('metodo_pago', 'mixto')->sum('pago_efectivo');
             
-        $efectivoCobrosFiados = $cobrosFiadosDia->where('metodo_pago', 'efectivo')->sum('total')
-            + $cobrosFiadosDia->where('metodo_pago', 'mixto')->sum('pago_efectivo');
+        $efectivoCobrosFiados = $cobrosFiadosDia->sum('pago_efectivo') ?: $cobrosFiadosDia->where('metodo_pago', 'efectivo')->sum('total');
         $totalEfectivo = $efectivoVentasHoy + $efectivoCobrosFiados;
 
         // Transferencias / Nequi
         $nequiVentasHoy = $ventasContadoHoy->whereIn('metodo_pago', ['transferencia', 'nequi'])->sum('total') 
             + $ventasContadoHoy->where('metodo_pago', 'mixto')->sum('pago_transferencia');
 
-        $nequiCobrosFiados = $cobrosFiadosDia->whereIn('metodo_pago', ['transferencia', 'nequi'])->sum('total')
-            + $cobrosFiadosDia->where('metodo_pago', 'mixto')->sum('pago_transferencia');
+        $nequiCobrosFiados = $cobrosFiadosDia->sum('pago_transferencia') ?: $cobrosFiadosDia->whereIn('metodo_pago', ['transferencia', 'nequi'])->sum('total');
         $totalNequi = $nequiVentasHoy + $nequiCobrosFiados;
 
         // 3. Control de Stock del Turno

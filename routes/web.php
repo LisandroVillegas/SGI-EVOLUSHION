@@ -29,11 +29,10 @@ Route::get('/admin/categoria/{id}',[App\Http\Controllers\CategoriaController::cl
 Route::get('/admin/categoria/{id}/edit',[App\Http\Controllers\CategoriaController::class, 'edit'])->name('categoria.edit')
 ->middleware('auth');
 
-Route::put('/admin/categoria/{id}',[App\Http\Controllers\CategoriaController::class, 'update'])->name('categoria.update')
-->middleware('auth');
+Route::put('/admin/categoria/{id}',[App\Http\Controllers\CategoriaController::class, 'update'])->name('categoria.update')->middleware('auth');
 
 Route::delete('/admin/categoria/{id}',[App\Http\Controllers\CategoriaController::class, 'destroy'])->name('categoria.destroy')
-->middleware('auth');
+->middleware(['auth', 'verify.pin']);
 
 
 
@@ -54,11 +53,10 @@ Route::get('/admin/producto/{id}', [App\Http\Controllers\ProductoController::cla
 Route::get('/admin/producto/{id}/edit', [App\Http\Controllers\ProductoController::class, 'edit'])->name('producto.edit')
     ->middleware('auth');
 
-Route::put('/admin/producto/{id}', [App\Http\Controllers\ProductoController::class, 'update'])->name('producto.update')
-    ->middleware('auth');
+Route::put('/admin/producto/{id}', [App\Http\Controllers\ProductoController::class, 'update'])->name('producto.update')->middleware('auth');
 
 Route::delete('/admin/producto/{id}', [App\Http\Controllers\ProductoController::class, 'destroy'])->name('producto.destroy')
-    ->middleware('auth');
+    ->middleware(['auth', 'verify.pin']);
 
 // Rutas para Compras
 
@@ -78,11 +76,10 @@ Route::get('/admin/compras/{id}', [App\Http\Controllers\CompraController::class,
 Route::get('/admin/compras/{id}/edit', [App\Http\Controllers\CompraController::class, 'edit'])->name('compras.edit')
     ->middleware('auth');
 
-Route::put('/admin/compras/{id}', [App\Http\Controllers\CompraController::class, 'update'])->name('compras.update')
-    ->middleware('auth');
+Route::put('/admin/compras/{id}', [App\Http\Controllers\CompraController::class, 'update'])->name('compras.update')->middleware('auth');
 
 Route::delete('/admin/compras/{id}', [App\Http\Controllers\CompraController::class, 'destroy'])->name('compras.destroy')
-    ->middleware('auth');
+    ->middleware(['auth', 'verify.pin']);
 
 
 // Rutas Para Turnos
@@ -106,7 +103,7 @@ Route::put('/admin/turnos/{id}', [App\Http\Controllers\TurnoController::class, '
     ->middleware('auth');
 
 Route::delete('/admin/turnos/{id}', [App\Http\Controllers\TurnoController::class, 'destroy'])->name('turnos.destroy')
-    ->middleware('auth');
+    ->middleware(['auth', 'verify.pin']);
 
 // Ruta Para Ventas Olvidadas duerante el turno
 
@@ -130,7 +127,7 @@ Route::get('/admin/ventas/{id}', [App\Http\Controllers\VentaController::class, '
     ->middleware('auth');
 
 Route::delete('/admin/ventas/{id}', [App\Http\Controllers\VentaController::class, 'destroy'])->name('ventas.destroy')
-    ->middleware('auth');
+    ->middleware(['auth', 'verify.pin']);
 
     //RUTAS PARA FIADOS
   Route::patch('/admin/ventas/{id}/pagar-fiado', [App\Http\Controllers\VentaController::class, 'pagarFiado'])
@@ -140,3 +137,4 @@ Route::delete('/admin/ventas/{id}', [App\Http\Controllers\VentaController::class
 // Rutas para Reportes Diarios
     Route::get('/admin/reportes/diario', [App\Http\Controllers\ReporteController::class, 'index'])->name('reportes.diario');
     Route::get('/admin/reportes/diario/pdf', [App\Http\Controllers\ReporteController::class, 'exportarPdf'])->name('reportes.diario.pdf');
+

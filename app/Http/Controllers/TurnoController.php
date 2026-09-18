@@ -16,7 +16,7 @@ class TurnoController extends Controller
 {
     public function index()
     {
-        $turnos = Turno::with('user')->orderBy('id', 'desc')->get();
+        $turnos = Turno::with(['user', 'ventas', 'compras'])->orderBy('id', 'desc')->get();
         return view('admin.turnos.index', compact('turnos'));
     }
 
@@ -100,32 +100,37 @@ class TurnoController extends Controller
             'detalles.producto', 
             'user', 
             'compras.detalles.producto', 
-            'ventas.detalles.producto'
+            'ventas.detalles.producto',
+            'cobrosFiados'
         ])->findOrFail($id);
         
         $totalCompras = $turno->compras ? $turno->compras->sum('total') : 0;
         
-        $totalVentasEfectivo = $turno->ventas ? $turno->ventas->where('estado_pago', 'pagado')->sum('pago_efectivo') : 0;
-        $totalVentasTransferencia = $turno->ventas ? $turno->ventas->where('metodo_pago', 'transferencia')->sum('total') : 0;
+        // Ventas de contado en efectivo de este turno (excluye ventas fiadas)
+        $totalVentasEfectivo = $turno->ventas ? $turno->ventas->where('metodo_pago', '!=', 'fiado')->whereNull('cliente_fiado')->sum('pago_efectivo') : 0;
+        $totalVentasTransferencia = $turno->ventas ? $turno->ventas->where('metodo_pago', '!=', 'fiado')->whereNull('cliente_fiado')->sum('pago_transferencia') : 0;
         
         $ventasFiadas = $turno->ventas ? $turno->ventas->where('metodo_pago', 'fiado') : collect();
         $totalFiadoOtorgado = $ventasFiadas->sum('total');
 
-        $cobrosFiados = $turno->ventas ? $turno->ventas->where('estado_pago', 'pagado')->whereNotNull('cliente_fiado') : collect();
+        // Fiados cobrados en este turno (soporta tanto los nuevos con turno_pago_id como los históricos)
+        $cobrosFiadosNuevos = $turno->cobrosFiados ?? collect();
+        $cobrosFiadosAntiguos = $turno->ventas ? $turno->ventas->where('estado_pago', 'pagado')->whereNotNull('cliente_fiado')->whereNull('turno_pago_id') : collect();
+        $cobrosFiados = $cobrosFiadosNuevos->merge($cobrosFiadosAntiguos)->unique('id');
         $totalFiadoCobrado = $cobrosFiados->sum('pago_efectivo');
 
         $totalVentas = $turno->ventas ? $turno->ventas->sum('total') : 0;
         
         if ($turno->estado === 'abierto') {
             $pagoTrabajadora = 0;
-            $dineroEsperado = ($turno->base_caja + $totalVentasEfectivo) - $totalCompras;
+            $dineroEsperado = ($turno->base_caja + $totalVentasEfectivo + $totalFiadoCobrado) - $totalCompras;
             $efectivoReal = 0;
             $diferenciaCalculada = 0;
         } else {
             $pagoTrabajadora = !is_null($turno->sueldo) ? $turno->sueldo : 0;
             $dineroEsperado = !is_null($turno->total_efectivo_esperado) 
                 ? $turno->total_efectivo_esperado 
-                : (($turno->base_caja + $totalVentasEfectivo) - $totalCompras - $pagoTrabajadora);
+                : (($turno->base_caja + $totalVentasEfectivo + $totalFiadoCobrado) - $totalCompras - $pagoTrabajadora);
                 
             $efectivoReal = !is_null($turno->total_efectivo_real) ? $turno->total_efectivo_real : 0;
             $diferenciaCalculada = !is_null($turno->total_descuadre_dinero) 
@@ -154,7 +159,8 @@ class TurnoController extends Controller
             'detalles.producto', 
             'user',
             'compras.detalles.producto',
-            'ventas.detalles.producto'
+            'ventas.detalles.producto',
+            'cobrosFiados'
         ])->findOrFail($id);
 
         if ($turno->estado !== 'abierto') {
@@ -165,15 +171,18 @@ class TurnoController extends Controller
 
         $totalCompras = $turno->compras ? $turno->compras->sum('total') : 0;
         $pagoTrabajadora = $turno->sueldo ?? 0;
-        $totalVentasEfectivo = $turno->ventas ? $turno->ventas->where('estado_pago', 'pagado')->sum('pago_efectivo') : 0;
+        $totalVentasEfectivo = $turno->ventas ? $turno->ventas->where('metodo_pago', '!=', 'fiado')->whereNull('cliente_fiado')->sum('pago_efectivo') : 0;
 
         $ventasFiadas = $turno->ventas ? $turno->ventas->where('metodo_pago', 'fiado') : collect();
         $totalFiadoOtorgado = $ventasFiadas->sum('total');
 
-        $cobrosFiados = $turno->ventas ? $turno->ventas->where('estado_pago', 'pagado')->whereNotNull('cliente_fiado') : collect();
+        // Fiados cobrados en este turno
+        $cobrosFiadosNuevos = $turno->cobrosFiados ?? collect();
+        $cobrosFiadosAntiguos = $turno->ventas ? $turno->ventas->where('estado_pago', 'pagado')->whereNotNull('cliente_fiado')->whereNull('turno_pago_id') : collect();
+        $cobrosFiados = $cobrosFiadosNuevos->merge($cobrosFiadosAntiguos)->unique('id');
         $totalFiadoCobrado = $cobrosFiados->sum('pago_efectivo');
 
-        $dineroEsperado = ($turno->base_caja + $totalVentasEfectivo) - $totalCompras - $pagoTrabajadora;
+        $dineroEsperado = ($turno->base_caja + $totalVentasEfectivo + $totalFiadoCobrado) - $totalCompras - $pagoTrabajadora;
 
         $detalleComprasTexto = [];
         if ($turno->compras) {
@@ -237,7 +246,7 @@ class TurnoController extends Controller
         try {
             DB::beginTransaction();
 
-            $turno = Turno::with(['compras', 'ventas', 'detalles'])->findOrFail($id);
+            $turno = Turno::with(['compras', 'ventas', 'detalles', 'cobrosFiados'])->findOrFail($id);
 
             foreach ($request->productos as $prod) {
                 $detalle = TurnoDetalle::where('turno_id', $turno->id)
@@ -285,10 +294,16 @@ class TurnoController extends Controller
 
             // Totales de compras y ventas
             $totalCompras = $turno->compras ? $turno->compras->sum('total') : 0;
-            $totalVentasEfectivo = $turno->ventas ? $turno->ventas->where('estado_pago', 'pagado')->sum('pago_efectivo') : 0;
+            $totalVentasEfectivo = $turno->ventas ? $turno->ventas->where('metodo_pago', '!=', 'fiado')->whereNull('cliente_fiado')->sum('pago_efectivo') : 0;
+
+            // Fiados cobrados en este turno
+            $cobrosFiadosNuevos = $turno->cobrosFiados ?? collect();
+            $cobrosFiadosAntiguos = $turno->ventas ? $turno->ventas->where('estado_pago', 'pagado')->whereNotNull('cliente_fiado')->whereNull('turno_pago_id') : collect();
+            $cobrosFiados = $cobrosFiadosNuevos->merge($cobrosFiadosAntiguos)->unique('id');
+            $totalFiadoCobrado = $cobrosFiados->sum('pago_efectivo');
 
             // Cálculo matemático oficial en el servidor
-            $dineroEsperado = ($turno->base_caja + $totalVentasEfectivo) - $totalCompras - $pagoTrabajadora;
+            $dineroEsperado = ($turno->base_caja + $totalVentasEfectivo + $totalFiadoCobrado) - $totalCompras - $pagoTrabajadora;
             
             // Diferencia real: Lo que hay físicamente en caja menos lo que matemáticamente debería haber
             $diferenciaEfectivo = $efectivoReal - $dineroEsperado;
@@ -416,16 +431,79 @@ class TurnoController extends Controller
 
     public function destroy($id)
     {
+
         try {
-            $turno = Turno::findOrFail($id);
+            DB::beginTransaction();
+
+            $turno = Turno::with([
+                'ventas.detalles', 
+                'compras.detalles', 
+                'cobrosFiados', 
+                'detalles'
+            ])->findOrFail($id);
+
+            // 2. Revertir el stock de las ventas realizadas en este turno
+            if ($turno->ventas) {
+                foreach ($turno->ventas as $venta) {
+                    if ($venta->detalles) {
+                        foreach ($venta->detalles as $det) {
+                            $prod = Producto::find($det->producto_id);
+                            if ($prod) {
+                                $prod->increment('stock', $det->cantidad);
+                            }
+                        }
+                    }
+                    $venta->detalles()->delete();
+                }
+                $turno->ventas()->delete();
+            }
+
+            // 3. Revertir el stock de las compras realizadas en este turno
+            if ($turno->compras) {
+                foreach ($turno->compras as $compra) {
+                    if ($compra->detalles) {
+                        foreach ($compra->detalles as $detCompra) {
+                            $prod = Producto::find($detCompra->producto_id);
+                            if ($prod) {
+                                $prod->decrement('stock', $detCompra->cantidad);
+                            }
+                        }
+                    }
+                    $compra->detalles()->delete();
+                }
+                $turno->compras()->delete();
+            }
+
+            // 4. Si en este turno se cobraron fiados de otros turnos, volverlos a estado pendiente
+            if ($turno->cobrosFiados) {
+                foreach ($turno->cobrosFiados as $fiadoCobrado) {
+                    $fiadoCobrado->update([
+                        'turno_pago_id' => null,
+                        'estado_pago' => 'pendiente',
+                        'fecha_pago' => null,
+                        'metodo_pago_saldo' => null,
+                        'pago_efectivo' => 0,
+                        'pago_transferencia' => 0,
+                    ]);
+                }
+            }
+
+            // 5. Eliminar detalles del conteo de apertura/cierre
+            $turno->detalles()->delete();
+
+            // 6. Eliminar el turno
             $turno->delete();
 
+            DB::commit();
+
             return redirect()->route('turnos.index')
-                ->with('mensaje', 'Turno eliminado correctamente.')
+                ->with('mensaje', 'Turno #' . $id . ' eliminado exitosamente y stock sincronizado.')
                 ->with('icono', 'success');
+
         } catch (\Exception $e) {
+            DB::rollBack();
             return redirect()->route('turnos.index')
-                ->with('mensaje', 'Ocurrió un error al intentar eliminar el turno.')
+                ->with('mensaje', 'Ocurrió un error al intentar eliminar el turno: ' . $e->getMessage())
                 ->with('icono', 'error');
         }
     }

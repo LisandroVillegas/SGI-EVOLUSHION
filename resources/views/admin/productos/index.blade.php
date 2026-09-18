@@ -38,46 +38,40 @@
                     <tbody>
                         @foreach ($productos as $producto)
                             <tr>
-                                <td style="text-align: center">{{ $loop->iteration }}</td>
-                                <td style="text-align: center">{{ $producto->codigo }}</td>
-                                <td style="text-align: center">{{ $producto->categoria->nombre }}</td>
-                                <td style="text-align: center">{{ $producto->nombre }}</td>
-                                <td style="text-align: center">${{ number_format($producto->precio_venta, 0, ',', '.') }}</td>
-                                <td style="text-align: center">{{ $producto->stock }}</td>
-                                <td style="text-align: center">
+                                <td style="text-align: center; vertical-align: middle;">{{ $loop->iteration }}</td>
+                                <td style="text-align: center; vertical-align: middle;">{{ $producto->codigo }}</td>
+                                <td style="text-align: center; vertical-align: middle;">{{ $producto->categoria->nombre ?? 'Sin categoría' }}</td>
+                                <td style="text-align: center; vertical-align: middle;">{{ $producto->nombre }}</td>
+                                <td style="text-align: center; vertical-align: middle;">${{ number_format($producto->precio_venta, 0, ',', '.') }}</td>
+                                <td style="text-align: center; vertical-align: middle;">{{ $producto->stock }}</td>
+                                <td style="text-align: center; vertical-align: middle;">
                                     @if($producto->imagen)
-                                        <img src="{{ asset('storage/' . $producto->imagen) }}" width="40px" class="img-thumbnail">
+                                        <img src="{{ asset('storage/'.$producto->imagen) }}" alt="Imagen" width="40px" class="img-thumbnail">
                                     @else
-                                        <span>Sin imagen</span>
+                                        Sin imagen
                                     @endif
                                 </td>
-                                <td style="text-align: center">
-                                    <div style="display: flex; justify-content: center; align-items: center; gap: 8px;">
-                                        <a href="{{ url('/admin/producto/'.$producto->id) }}" class="btn btn-info"><i class="fas fa-eye"></i> Ver</a>
-                                        <a href="{{ url('/admin/producto/'.$producto->id.'/edit') }}" class="btn btn-warning"><i class="fas fa-edit"></i> Editar</a>
-                                        <form action="{{ url('/admin/producto/'.$producto->id) }}" id="miformulario{{ $producto->id }}" method="POST" style="margin: 0;">
+                                <td style="text-align: center; vertical-align: middle;">
+                                    <div style="display: flex; justify-content: center; align-items: center; gap: 4px;">
+                                        <!-- Botón Ver (Ruta en singular: /admin/producto/) -->
+                                        <a href="{{ url('/admin/producto/'.$producto->id) }}" class="btn btn-info btn-sm font-weight-bold shadow-sm" title="Ver">
+                                            <i class="fas fa-eye mr-1"></i> Ver
+                                        </a>
+                                        
+                                        <!-- Botón Editar (Ruta en singular: /admin/producto/) -->
+                                        <a href="{{ url('/admin/producto/'.$producto->id.'/edit') }}" class="btn btn-warning btn-sm font-weight-bold shadow-sm" title="Editar">
+                                            <i class="fas fa-edit mr-1"></i> Editar
+                                        </a>
+
+                                        <!-- Botón Eliminar con PIN (Ruta en singular: /admin/producto/) -->
+                                        <form action="{{ url('/admin/producto/'.$producto->id) }}" method="POST" class="d-inline form-secured" data-secured-message="&iquest;Desea eliminar este producto?">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-danger" onclick="preguntar{{ $producto->id }}(event)"><i class="fas fa-trash"></i> Eliminar</button>
+                                            <button type="submit" class="btn btn-danger btn-sm font-weight-bold shadow-sm text-white" title="Eliminar">
+                                                <i class="fas fa-trash-alt mr-1"></i> Eliminar
+                                            </button>
                                         </form>
                                     </div>
-                                    <script>
-                                        function preguntar{{ $producto->id }}(event) {
-                                            event.preventDefault();
-                                            Swal.fire({
-                                                title: "¿Desea eliminar este registro?",
-                                                icon: "question",
-                                                showCancelButton: true,
-                                                confirmButtonColor: "#3085d6",
-                                                cancelButtonColor: "#d33",
-                                                confirmButtonText: "Sí, eliminar"
-                                            }).then((result) => {
-                                                if (result.isConfirmed) {
-                                                    document.getElementById('miformulario{{ $producto->id }}').submit();
-                                                }
-                                            });
-                                        }
-                                    </script>
                                 </td>
                             </tr>
                         @endforeach
@@ -89,46 +83,39 @@
 </div>
 @stop
 
-
 @section('css')
     <style>
-    /* Fondo transparente y sin borde en el contenedor */
     #example1_wrapper .dt-buttons {
         background-color: transparent;
         box-shadow: none;
         border: none;
         display: flex;
-        justify-content: center; /* Centrar los botones */
-        gap: 10px; /* Espaciado entre botones */
-        margin-bottom: 15px; /* Separar botones de la tabla */
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 15px;
     }
-
-    /* Estilo personalizado para los botones */
-    #example1_wrapper .btn {
-        color: white; /* Color del texto en blanco */
-        border-radius: 4px; /* Bordes redondeados */
-        padding: 5px 15px; /* Espaciado interno */
-        font-size: 14px; /* TamaÃ±o de fuente */
+    #example1_wrapper .dt-buttons .btn {
+        color: #fff;
+        border-radius: 4px;
+        padding: 5px 15px;
+        font-size: 14px;
     }
-
-    /* Colores por tipo de botÃ³n */
     .btn-danger { background-color: #dc3545; border: none; }
     .btn-success { background-color: #28a745; border: none; }
     .btn-info { background-color: #17a2b8; border: none; }
     .btn-warning { background-color: #ffc107; color: #212529; border: none; }
-    .btn-default { background-color: #6c757d;  border: none; }
-
-    
-</style>
-
+    .btn-default { background-color: #6e7176; color: #212529; border: none; }
+    </style>
+@stop
 
 @section('js')
-   <script>
-     $(function () {
+@include('admin.partials.pin-security')
+<script>
+    $(function () {
         $("#example1").DataTable({
             "pageLength": 10,
             "language": {
-                "emptyTable": "No hay informacion",
+                "emptyTable": "No hay información",
                 "info": "Mostrando _START_ a _END_ de _TOTAL_ Productos",
                 "infoEmpty": "Mostrando 0 a 0 de 0 Productos",
                 "infoFiltered": "(Filtrado de _MAX_ total Productos)",
@@ -139,7 +126,7 @@
                 "zeroRecords": "Sin resultados encontrados",
                 "paginate": {
                     "first": "Primero",
-                    "last": "Ultimo",
+                    "last": "Último",
                     "next": "Siguiente",
                     "previous": "Anterior"
                 }
@@ -148,7 +135,7 @@
             "lengthChange": true,
             "autoWidth": false,
             buttons: [
-                { text: '<i class="fas fa-copy"></i> COPIAR', extend: 'copy', className: 'btn btn-secondary' },
+                { text: '<i class="fas fa-copy"></i> COPIAR', extend: 'copy', className: 'btn btn-default' },
                 { text: '<i class="fas fa-file-pdf"></i> PDF', extend: 'pdf', className: 'btn btn-danger' },
                 { text: '<i class="fas fa-file-csv"></i> CSV', extend: 'csv', className: 'btn btn-info' },
                 { text: '<i class="fas fa-file-excel"></i> EXCEL', extend: 'excel', className: 'btn btn-success' },
@@ -156,5 +143,5 @@
             ]
         }).buttons().container().appendTo('#example1_wrapper .row:eq(0)');
     });
-   </script>
+</script>
 @stop

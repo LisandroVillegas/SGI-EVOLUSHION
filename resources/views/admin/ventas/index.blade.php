@@ -102,17 +102,17 @@
 
                             {{-- ACCIONES CON TEXTO (VER Y ELIMINAR) --}}
                             <td class="text-center align-middle">
-                                <div class="d-flex justify-content-center align-items-center">
+                                <div style="display: flex; justify-content: center; align-items: center; gap: 6px;">
                                     <a href="{{ route('ventas.show', $venta->id) }}" 
-                                       class="btn btn-info btn-sm mr-2 font-weight-bold shadow-sm" 
+                                       class="btn btn-info btn-sm font-weight-bold shadow-sm" 
                                        title="Ver Detalle">
                                         <i class="fas fa-eye mr-1"></i> Ver
                                     </a>
-                                    <form action="{{ route('ventas.destroy', $venta->id) }}" method="POST" class="d-inline form-eliminar">
+                                    <form action="{{ route('ventas.destroy', $venta->id) }}" method="POST" class="d-inline form-secured" data-secured-message="&iquest;Eliminar venta? Stock ser&aacute; devuelto.">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" 
-                                                class="btn btn-danger btn-sm font-weight-bold shadow-sm" 
+                                                class="btn btn-danger btn-sm font-weight-bold shadow-sm text-white" 
                                                 title="Eliminar Venta">
                                             <i class="fas fa-trash-alt mr-1"></i> Eliminar
                                         </button>
@@ -163,6 +163,7 @@
 @stop
 
 @section('js')
+@include('admin.partials.pin-security')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     $(document).ready(function() {
@@ -210,3 +211,4 @@
     });
 </script>
 @stop
+
