@@ -11,6 +11,8 @@ class Compra extends Model
 
     protected $fillable = [
         'turno_id',
+        'tipo',
+        'concepto',
         'comprobante',
         'fecha',
         'total',
@@ -19,5 +21,10 @@ class Compra extends Model
     public function detalles()
     {
         return $this->hasMany(DetalleCompra::class);
+    }
+
+    public function turno()
+    {
+        return $this->belongsTo(Turno::class);
     }
 }

@@ -70,13 +70,29 @@
                             <div class="input-group-prepend">
                                 <span class="input-group-text font-weight-bold bg-white border-danger text-danger">$</span>
                             </div>
-                            <input type="number" step="100" min="0" name="pago_trabajadora" id="pago_trabajadora" 
+                            <input type="number" step="1" min="0" name="pago_trabajadora" id="pago_trabajadora" 
                                    class="form-control border-danger font-weight-bold text-danger" 
-                                   value="{{ old('pago_trabajadora', $pagoTrabajadora) }}" placeholder="0">
+                                   value="{{ old('pago_trabajadora', intval($pagoTrabajadora)) }}" placeholder="0">
                         </div>
                     </div>
 
-                    {{-- Dinero Esperado Destacado (Con el name agregado) --}}
+                    {{-- Campo de Base para el Siguiente Turno (Inicializa en 0) --}}
+                    <div class="form-group mb-3">
+                        <label for="base_siguiente_turno" class="font-weight-bold text-dark mb-1">
+                            <i class="fas fa-wallet text-primary mr-1"></i> (-) Base para el Siguiente Turno
+                        </label>
+                        <div class="input-group input-group-sm">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text font-weight-bold bg-white border-primary text-primary">$</span>
+                            </div>
+                            <input type="number" step="1" min="0" name="base_siguiente_turno" id="base_siguiente_turno" 
+                                   class="form-control border-primary font-weight-bold text-primary" 
+                                   value="{{ old('base_siguiente_turno', 0) }}" placeholder="0">
+                        </div>
+                        <small class="text-muted" style="font-size: 0.75rem;">Dinero que se dejará en caja para arrancar el próximo turno.</small>
+                    </div>
+
+                    {{-- Dinero Esperado en Caja --}}
                     <div class="alert alert-warning text-center mb-3 p-2 shadow-sm border-warning">
                         <small class="text-uppercase font-weight-bold d-block text-dark">Dinero Esperado en Caja</small>
                         <h3 class="m-0 font-weight-bold text-dark" id="texto_dinero_esperado">${{ number_format($dineroEsperado, 0, ',', '.') }}</h3>
@@ -92,9 +108,9 @@
                             <div class="input-group-prepend">
                                 <span class="input-group-text font-weight-bold bg-white border-success text-success">$</span>
                             </div>
-                            <input type="number" step="100" min="0" name="total_efectivo_real" id="total_efectivo_real" 
+                            <input type="number" step="1" min="0" name="total_efectivo_real" id="total_efectivo_real" 
                                    class="form-control form-control-lg border-success font-weight-bold text-success @error('total_efectivo_real') is-invalid @enderror" 
-                                   placeholder="0" required autofocus style="font-size: 1.5rem;">
+                                   placeholder="0" required style="font-size: 1.5rem;">
                         </div>
                     </div>
 
@@ -134,59 +150,54 @@
             </div>
         </div>
 
-        {{-- COLUMNA DERECHA: TABLA DE PRODUCTOS E INVENTARIO --}}
+        {{-- COLUMNA DERECHA: CONTEO DE PRODUCTOS --}}
         <div class="col-lg-8 col-md-7">
-            <div class="card card-outline card-warning shadow-sm">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h3 class="card-title font-weight-bold m-0"><i class="fas fa-boxes mr-1 text-warning"></i> Control de Stock (Apertura vs Cierre)</h3>
+            <div class="card card-outline card-primary shadow-sm">
+                <div class="card-header bg-light">
+                    <h3 class="card-title font-weight-bold"><i class="fas fa-boxes mr-1 text-primary"></i> Conteo de Inventario Final</h3>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="bg-light">
-                                <tr class="text-uppercase small font-weight-bold text-muted">
-                                    <th class="border-0 pl-3">Producto</th>
-                                    <th class="text-center border-0" style="width: 110px;">Apertura</th>
-                                    <th class="text-center border-0" style="width: 110px;">Esperado</th>
-                                    <th class="text-center border-0" style="width: 160px;">Conteo Cierre</th>
-                                    <th class="text-center border-0 pl-2" style="width: 100px;">Diferencia</th>
+                        <table class="table table-striped table-hover table-sm m-0">
+                            <thead class="thead-dark small">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center">Stock Inicial</th>
+                                    <th class="text-center">Esperado</th>
+                                    <th class="text-center" style="width: 160px;">Conteo Físico</th>
+                                    <th class="text-center">Estado</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($turno->detalles as $detalle)
-                                    @php
-                                        $stockEsperado = $detalle->stock_esperado_calculado ?? $detalle->stock_fisico_apertura; 
-                                    @endphp
-                                    <tr id="fila-producto-{{ $detalle->producto_id }}" class="fila-conteo">
-                                        <td class="align-middle pl-3">
-                                            <strong class="text-dark d-block">{{ $detalle->producto->nombre }}</strong>
-                                            <input type="hidden" name="productos[{{ $loop->index }}][id]" value="{{ $detalle->producto_id }}">
-                                            <input type="hidden" name="productos[{{ $loop->index }}][stock_esperado]" id="input_esperado_{{ $detalle->producto_id }}" value="{{ $stockEsperado }}">
+                                @foreach($turno->detalles as $index => $detalle)
+                                    <tr>
+                                        <td class="align-middle font-weight-bold small">
+                                            {{ $detalle->producto->nombre }}
+                                            <input type="hidden" name="productos[{{ $index }}][id]" value="{{ $detalle->producto_id }}">
+                                        </td>
+                                        <td class="text-center align-middle small">{{ $detalle->stock_fisico_apertura }}</td>
+                                        <td class="text-center align-middle font-weight-bold text-primary small" id="esperado_{{ $detalle->producto_id }}">
+                                            {{ $detalle->stock_esperado_calculado }}
                                         </td>
                                         <td class="text-center align-middle">
-                                            <span class="badge badge-light border px-2 py-1" style="font-size: 10pt;">{{ $detalle->stock_fisico_apertura }}</span>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <span class="badge badge-secondary px-2 py-1 badge-stock-esperado" id="badge_esperado_{{ $detalle->producto_id }}" style="font-size: 10pt;">{{ $stockEsperado }}</span>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            <div class="input-group input-group-sm mx-auto" style="max-width: 130px;">
+                                            <div class="input-group input-group-sm">
                                                 <div class="input-group-prepend">
-                                                    <button type="button" class="btn btn-outline-secondary btn-restar-stock" data-id="{{ $detalle->producto_id }}"><i class="fas fa-minus"></i></button>
+                                                    <button type="button" class="btn btn-outline-secondary btn-restar" data-id="{{ $detalle->producto_id }}"><i class="fas fa-minus"></i></button>
                                                 </div>
-                                                <input type="number" name="productos[{{ $loop->index }}][stock_fisico]" 
-                                                       class="form-control form-control-sm text-center font-weight-bold input-conteo-cierre px-1" 
-                                                       data-producto-id="{{ $detalle->producto_id }}"
-                                                       data-nombre="{{ $detalle->producto->nombre }}"
-                                                       data-esperado="{{ $stockEsperado }}" 
-                                                       value="{{ $stockEsperado }}" min="0" required>
+                                                <input type="number" min="0" name="productos[{{ $index }}][stock_fisico]" 
+                                                       id="input_stock_{{ $detalle->producto_id }}" 
+                                                       class="form-control text-center font-weight-bold input-stock-fisico" 
+                                                       value="{{ old('productos.'.$index.'.stock_fisico', $detalle->stock_esperado_calculado) }}" 
+                                                       data-id="{{ $detalle->producto_id }}"
+                                                       data-esperado="{{ $detalle->stock_esperado_calculado }}"
+                                                       data-nombre="{{ $detalle->producto->nombre }}">
                                                 <div class="input-group-append">
-                                                    <button type="button" class="btn btn-outline-secondary btn-sumar-stock" data-id="{{ $detalle->producto_id }}"><i class="fas fa-plus"></i></button>
+                                                    <button type="button" class="btn btn-outline-secondary btn-sumar" data-id="{{ $detalle->producto_id }}"><i class="fas fa-plus"></i></button>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="text-center align-middle pr-3">
-                                            <span class="badge badge-success px-2 py-1 span-diferencia-cierre" style="font-size: 10.5pt; width: 45px;">0</span>
+                                        <td class="text-center align-middle" id="badge_estado_{{ $detalle->producto_id }}">
+                                            <span class="badge badge-success px-2 py-1">0</span>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -194,9 +205,11 @@
                         </table>
                     </div>
                 </div>
-                <div class="card-footer bg-light text-right py-2">
-                    <a href="{{ url('/admin/turnos') }}" class="btn btn-secondary px-4">Cancelar</a>
-                    <button type="submit" class="btn btn-warning font-weight-bold px-4"><i class="fas fa-lock mr-1"></i> Finalizar y Cerrar Turno</button>
+                <div class="card-footer bg-light text-right">
+                    <a href="{{ route('turnos.index') }}" class="btn btn-secondary mr-2">Cancelar</a>
+                    <button type="submit" class="btn btn-warning font-weight-bold shadow-sm">
+                        <i class="fas fa-lock mr-1"></i> Finalizar y Cerrar Turno
+                    </button>
                 </div>
             </div>
         </div>
@@ -205,8 +218,8 @@
 
 {{-- MODAL VENTA OLVIDADA --}}
 <div class="modal fade" id="modalVentaOlvidada" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content shadow">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title font-weight-bold"><i class="fas fa-cart-plus mr-1"></i> Registrar Venta Olvidada</h5>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
@@ -215,33 +228,31 @@
             </div>
             <div class="modal-body">
                 <form id="formVentaOlvidada">
+                    @csrf
                     <input type="hidden" name="turno_id" value="{{ $turno->id }}">
-                    
                     <div class="form-group">
-                        <label for="select_producto" class="font-weight-bold">Producto <span class="text-danger">*</span></label>
-                        <select name="producto_id" id="select_producto" class="form-control" required>
-                            <option value="">-- Seleccionar Producto --</option>
-                            @foreach($turno->detalles as $detalle)
-                                <option value="{{ $detalle->producto_id }}">{{ $detalle->producto->nombre }}</option>
+                        <label for="producto_olvidado_id">Producto Vendido <span class="text-danger">*</span></label>
+                        <select name="producto_id" id="producto_olvidado_id" class="form-control" required>
+                            <option value="">Seleccione un producto...</option>
+                            @foreach($turno->detalles as $det)
+                                <option value="{{ $det->producto_id }}">{{ $det->producto->nombre }}</option>
                             @endforeach
                         </select>
                     </div>
-
                     <div class="form-group">
-                        <label for="input_cantidad" class="font-weight-bold">Cantidad <span class="text-danger">*</span></label>
-                        <input type="number" name="cantidad" id="input_cantidad" class="form-control" value="1" min="1" required>
+                        <label for="cantidad_olvidada">Cantidad Vendida <span class="text-danger">*</span></label>
+                        <input type="number" name="cantidad" id="cantidad_olvidada" class="form-control" min="1" value="1" required>
                     </div>
-
-                    <div class="form-group mb-0">
-                        <label for="input_motivo" class="font-weight-bold">Motivo / Observación</label>
-                        <input type="text" name="motivo" id="input_motivo" class="form-control" placeholder="Ej: Olvido de registro en el sistema">
+                    <div class="form-group">
+                        <label for="motivo_olvidado">Observación / Motivo</label>
+                        <input type="text" name="motivo" id="motivo_olvidado" class="form-control" placeholder="Ej: No se marcó en caja por afán">
                     </div>
                 </form>
             </div>
-            <div class="modal-footer bg-light">
+            <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary font-weight-bold" id="btnGuardarVentaOlvidada">
-                    <i class="fas fa-save mr-1"></i> Guardar y Ajustar Caja
+                    <i class="fas fa-save mr-1"></i> Guardar Venta
                 </button>
             </div>
         </div>
@@ -250,182 +261,163 @@
 @stop
 
 @section('js')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     $(document).ready(function() {
-        let ventasOlvidadas = [];
-        let totalComprasTurno = parseFloat("{{ $totalCompras }}") || 0;
-        let totalVentasEfectivoTurno = parseFloat("{{ $totalVentasEfectivo }}") || 0;
-        let totalFiadoCobradoTurno = parseFloat("{{ $totalFiadoCobrado }}") || 0;
-        let baseCaja = parseFloat("{{ $turno->base_caja }}") || 0;
-        let listaCompras = @json($detalleComprasTexto ?? []);
+        let baseInicial = {{ $turno->base_caja }};
+        let totalVentas = {{ $totalVentasEfectivo }};
+        let totalCompras = {{ $totalCompras }};
+        let totalFiadoCobrado = {{ $totalFiadoCobrado }};
+        let egresosTexto = @json($detalleEgresosTexto ?? []);
 
-        $('.btn-sumar-stock').on('click', function() {
-            let input = $(this).closest('tr').find('.input-conteo-cierre');
-            let val = parseInt(input.val()) || 0;
-            input.val(val + 1).trigger('change');
+        function recalcularFinanzas() {
+            let pagoTrabajadora = parseFloat($('#pago_trabajadora').val()) || 0;
+            let baseSiguiente = parseFloat($('#base_siguiente_turno').val()) || 0;
+
+            let dineroEsperadoCalculado = (baseInicial + totalVentas + totalFiadoCobrado) - totalCompras - pagoTrabajadora - baseSiguiente;
+            
+            $('#dinero_esperado_caja').val(dineroEsperadoCalculado);
+            $('#texto_dinero_esperado').text('$' + new Intl.NumberFormat('es-CO').format(dineroEsperadoCalculado));
+
+            generarReporteUnificado();
+        }
+
+        function generarReporteUnificado() {
+            let fmt = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
+            let pagoTrabajadora = parseFloat($('#pago_trabajadora').val()) || 0;
+            let baseSiguiente = parseFloat($('#base_siguiente_turno').val()) || 0;
+            let dineroEsperado = parseFloat($('#dinero_esperado_caja').val()) || 0;
+            let efectivoReal = parseFloat($('#total_efectivo_real').val());
+            
+            let lineasReporte = [];
+            lineasReporte.push("RESUMEN FINANCIERO DEL TURNO:");
+            lineasReporte.push("--------------------------------");
+            lineasReporte.push("(+) Base Inicial: $" + fmt.format(baseInicial));
+            lineasReporte.push("(+) Ventas en Efectivo: $" + fmt.format(totalVentas));
+            if (totalFiadoCobrado > 0) {
+                lineasReporte.push("(+) Abonos a Fiados (Caja): $" + fmt.format(totalFiadoCobrado));
+            }
+            lineasReporte.push("(-) Compras / Egresos: $" + fmt.format(totalCompras));
+            if (pagoTrabajadora > 0) {
+                lineasReporte.push("(-) Pago a Trabajadora / Sueldo: $" + fmt.format(pagoTrabajadora));
+            }
+            if (baseSiguiente > 0) {
+                lineasReporte.push("(-) Base para el Siguiente Turno: $" + fmt.format(baseSiguiente));
+            }
+            lineasReporte.push("--------------------------------");
+            lineasReporte.push("(=) DINERO ESPERADO EN CAJA: $" + fmt.format(dineroEsperado));
+            
+            if (!isNaN(efectivoReal)) {
+                lineasReporte.push("(=) EFECTIVO REAL CONTADO: $" + fmt.format(efectivoReal));
+                lineasReporte.push("");
+                
+                if (dineroEsperado < 0) {
+                    lineasReporte.push("ADVERTENCIA: Los egresos y sueldos superan el efectivo disponible en caja.\n");
+                }
+
+                let difEfectivo = efectivoReal - dineroEsperado;
+                if (difEfectivo <= -0.01) {
+                    lineasReporte.push("- FALTANTE DE DINERO EN CAJA: -$" + fmt.format(Math.abs(difEfectivo)));
+                } else if (difEfectivo >= 0.01) {
+                    lineasReporte.push("- SOBRANTE DE DINERO EN CAJA: +$" + fmt.format(difEfectivo));
+                } else {
+                    lineasReporte.push("- CAJA CUADRADA CORRECTAMENTE");
+                }
+            }
+            
+            lineasReporte.push("\nDETALLE DE INVENTARIO Y EGRESOS:");
+            let hayNovedades = false;
+            
+            if (egresosTexto.length > 0) {
+                egresosTexto.forEach(function(eg) { 
+                    lineasReporte.push(eg); 
+                    hayNovedades = true;
+                });
+            }
+            
+            $('.input-stock-fisico').each(function() {
+                let esperado = parseInt($(this).data('esperado')) || 0;
+                let fisico = parseInt($(this).val()) || 0;
+                let dif = fisico - esperado;
+                let nombre = $(this).data('nombre');
+                
+                if (dif < 0) {
+                    lineasReporte.push("- FALTANTE EN CIERRE: " + nombre + " (" + Math.abs(dif) + " und)");
+                    hayNovedades = true;
+                } else if (dif > 0) {
+                    lineasReporte.push("- SOBRANTE EN CIERRE: " + nombre + " (+" + dif + " und)");
+                    hayNovedades = true;
+                }
+            });
+
+            if (!hayNovedades) {
+                lineasReporte.push("- Sin novedades de inventario ni egresos.");
+            }
+
+            $('#reporte_descuadre_cierre').val(lineasReporte.join("\n"));
+        }
+
+        // Eventos de cambios financieros
+        $('#pago_trabajadora, #base_siguiente_turno, #total_efectivo_real').on('input change', function() {
+            recalcularFinanzas();
         });
 
-        $('.btn-restar-stock').on('click', function() {
-            let input = $(this).closest('tr').find('.input-conteo-cierre');
+        // Eventos de cambios en stock físico
+        $('.input-stock-fisico').on('input change', function() {
+            let id = $(this).data('id');
+            let esperado = parseInt($(this).data('esperado')) || 0;
+            let fisico = parseInt($(this).val()) || 0;
+            let dif = fisico - esperado;
+
+            let badgeCell = $('#badge_estado_' + id);
+            if (dif === 0) {
+                badgeCell.html('<span class="badge badge-success px-2 py-1">0</span>');
+            } else if (dif < 0) {
+                badgeCell.html('<span class="badge badge-danger px-2 py-1">' + dif + '</span>');
+            } else {
+                badgeCell.html('<span class="badge badge-info px-2 py-1">+' + dif + '</span>');
+            }
+
+            generarReporteUnificado();
+        });
+
+        // Botones mas y menos para conteo rapido
+        $('.btn-restar').click(function() {
+            let id = $(this).data('id');
+            let input = $('#input_stock_' + id);
             let val = parseInt(input.val()) || 0;
             if (val > 0) {
                 input.val(val - 1).trigger('change');
             }
         });
 
-        function recalcularDineroEsperado() {
-            let pagoTrabajadora = parseFloat($('#pago_trabajadora').val()) || 0;
-            let nuevoDineroEsperado = (baseCaja + totalVentasEfectivoTurno + totalFiadoCobradoTurno) - totalComprasTurno - pagoTrabajadora;
-
-            $('#dinero_esperado_caja').data('valor', nuevoDineroEsperado).val(nuevoDineroEsperado);
-            $('#texto_dinero_esperado').text('$' + nuevoDineroEsperado.toLocaleString('es-CO'));
-
-            actualizarReporteCierre();
-        }
-
-        function actualizarReporteCierre() {
-            let novedades = [];
-            let pagoTrabajadora = parseFloat($('#pago_trabajadora').val()) || 0;
-
-            if (totalVentasEfectivoTurno > 0) {
-                novedades.push("VENTAS REGISTRADAS POS (EFECTIVO): +$" + totalVentasEfectivoTurno.toLocaleString('es-CO'));
-            }
-
-            if (totalFiadoCobradoTurno > 0) {
-                novedades.push("COBRO DE FIADOS (EFECTIVO): +$" + totalFiadoCobradoTurno.toLocaleString('es-CO'));
-            }
-
-            if (listaCompras.length > 0) {
-                novedades.push("COMPRAS REALIZADAS EN TURNO (Total: -$" + totalComprasTurno.toLocaleString('es-CO') + "):");
-                listaCompras.forEach(function(item) {
-                    novedades.push("   * " + item);
-                });
-            }
-
-            if (pagoTrabajadora > 0) {
-                novedades.push("PAGO A TRABAJADORA: -$" + pagoTrabajadora.toLocaleString('es-CO'));
-            }
-
-            if (ventasOlvidadas.length > 0) {
-                novedades.push("VENTAS NO REGISTRADAS (AGREGADAS EN CIERRE):");
-                ventasOlvidadas.forEach(function(item) {
-                    novedades.push("   * " + item);
-                });
-            }
-
-            let dineroEsperado = parseFloat($('#dinero_esperado_caja').data('valor')) || 0;
-            let efectivoInput = $('#total_efectivo_real').val();
-
-            if (efectivoInput !== '' && efectivoInput !== undefined) {
-                let efectivoReal = parseFloat(efectivoInput) || 0;
-                let difDinero = efectivoReal - dineroEsperado;
-
-                if (difDinero < 0) {
-                    novedades.push("FALTANTE DE DINERO EN CAJA: -$" + Math.abs(difDinero).toLocaleString('es-CO'));
-                } else if (difDinero > 0) {
-                    novedades.push("SOBRANTE DE DINERO EN CAJA: +$" + difDinero.toLocaleString('es-CO'));
-                }
-            }
-
-            $('.input-conteo-cierre').each(function() {
-                let fila = $(this).closest('tr');
-                let nombreProducto = $(this).data('nombre');
-                let stockEsperado = parseInt($(this).attr('data-esperado')) || 0;
-                let stockFisico = parseInt($(this).val()) || 0;
-                let diferencia = stockFisico - stockEsperado;
-                
-                let badge = fila.find('.span-diferencia-cierre');
-
-                if (diferencia === 0) {
-                    fila.removeClass('table-danger table-warning');
-                    badge.removeClass('badge-danger badge-warning badge-info').addClass('badge-success').text('0');
-                } else if (diferencia < 0) {
-                    fila.removeClass('table-warning').addClass('table-danger');
-                    badge.removeClass('badge-success badge-warning badge-info').addClass('badge-danger').text(diferencia);
-                    novedades.push("FALTANTE EN CIERRE: " + nombreProducto + " (" + Math.abs(diferencia) + " und)");
-                } else {
-                    fila.removeClass('table-danger').addClass('table-warning');
-                    badge.removeClass('badge-success badge-danger badge-warning').addClass('badge-info').text('+' + diferencia);
-                    novedades.push("SOBRANTE EN CIERRE: " + nombreProducto + " (+" + diferencia + " und)");
-                }
-            });
-
-            if (novedades.length > 0) {
-                $('#reporte_descuadre_cierre').val("RESUMEN Y NOVEDADES DE CIERRE:\n- " + novedades.join("\n- "));
-            } else {
-                $('#reporte_descuadre_cierre').val("Cierre sin compras, pagos a trabajadora ni diferencias en dinero/inventario.");
-            }
-        }
-
-        $(document).on('input change', '.input-conteo-cierre, #total_efectivo_real', function() {
-            actualizarReporteCierre();
+        $('.btn-sumar').click(function() {
+            let id = $(this).data('id');
+            let input = $('#input_stock_' + id);
+            let val = parseInt(input.val()) || 0;
+            input.val(val + 1).trigger('change');
         });
 
-        $(document).on('input change', '#pago_trabajadora', function() {
-            recalcularDineroEsperado();
-        });
-
-        $('#btnGuardarVentaOlvidada').on('click', function() {
-            let productoId = $('#select_producto').val();
-            let cantidad = parseInt($('#input_cantidad').val()) || 0;
-            let motivo = $('#input_motivo').val();
-
-            if (!productoId || cantidad <= 0) {
-                Swal.fire('Campos requeridos', 'Seleccione un producto y una cantidad válida.', 'warning');
-                return;
-            }
-
+        // Venta Olvidada vía AJAX
+        $('#btnGuardarVentaOlvidada').click(function() {
             let formData = $('#formVentaOlvidada').serialize();
-
             $.ajax({
                 url: "{{ route('turnos.registrarVentaOlvidada') }}",
-                method: "POST",
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
+                type: "POST",
                 data: formData,
-                success: function(response) {
-                    if (response.success) {
-                        totalVentasEfectivoTurno += response.subtotal;
-                        $('#texto_total_ventas').text('$' + totalVentasEfectivoTurno.toLocaleString('es-CO'));
-
-                        let inputEsperado = $('#input_esperado_' + response.producto_id);
-                        let badgeEsperado = $('#badge_esperado_' + response.producto_id);
-                        let inputConteo = $('input[data-producto-id="' + response.producto_id + '"]');
-
-                        if (inputEsperado.length) {
-                            inputEsperado.val(response.nuevo_stock_esperado);
-                            badgeEsperado.text(response.nuevo_stock_esperado);
-                            inputConteo.attr('data-esperado', response.nuevo_stock_esperado);
-                        }
-
-                        let textoNovedad = response.cantidad + "x " + response.producto_nombre + " ($" + response.subtotal.toLocaleString('es-CO') + ")";
-                        if (motivo) {
-                            textoNovedad += " - Motivo: " + motivo;
-                        }
-                        ventasOlvidadas.push(textoNovedad);
-
+                success: function(res) {
+                    if (res.success) {
                         $('#modalVentaOlvidada').modal('hide');
-                        $('#formVentaOlvidada')[0].reset();
-
-                        recalcularDineroEsperado();
-                        Swal.fire('Venta Agregada', response.message, 'success');
-                    } else {
-                        Swal.fire('Error', response.message || 'No se pudo registrar la venta.', 'error');
+                        location.reload();
                     }
                 },
-                error: function(xhr) {
-                    let msg = 'Ocurrió un error al procesar la solicitud.';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        msg = xhr.responseJSON.message;
-                    }
-                    Swal.fire('Error', msg, 'error');
+                error: function(err) {
+                    alert('Ocurrió un error al guardar la venta olvidada.');
                 }
             });
         });
 
-        recalcularDineroEsperado();
+        // Inicializar cálculos
+        recalcularFinanzas();
     });
 </script>
 @stop

@@ -14,6 +14,7 @@ class Turno extends Model
         'fecha_inicio',
         'fecha_cierre',
         'base_caja',
+        'base_siguiente_turno',
         'total_efectivo_esperado',
         'total_efectivo_real',
         'total_descuadre_dinero',

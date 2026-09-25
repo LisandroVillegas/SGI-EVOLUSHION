@@ -33,22 +33,22 @@
                             <div class="input-group-prepend">
                                 <span class="input-group-text">$</span>
                             </div>
-                            <input type="number" step="100" min="0" name="base_caja" id="base_caja" 
-                                   class="form-control @error('base_caja') is-invalid @enderror" 
-                                   placeholder="Ej: 50000" value="{{ old('base_caja') }}" required autofocus>
+                           <input type="number" step="1" min="0" name="base_caja" id="base_caja" 
+                                  class="form-control @error('base_caja') is-invalid @enderror" 
+                                  placeholder="Ej: 50000" value="{{ old('base_caja', $baseSugerida ?? 50000) }}" required autofocus>
                         </div>
                         @error('base_caja')
                             <small class="text-danger">{{ $message }}</small>
                         @enderror
                     </div>
 
-                    {{-- Novedades automáticas de inventario --}}
+                    {{-- Novedades automáticas de inventario (CORREGIDO: Se agregó name="reporte_inventario") --}}
                     <div class="form-group">
                         <label for="novedades_sistema">
                             Reporte Automático de Inventario
                             <small class="text-muted d-block">(Generado según diferencias físicas)</small>
                         </label>
-                        <textarea id="novedades_sistema" rows="4" class="form-control bg-light" readonly>Apertura de turno sin novedades en inventario.</textarea>
+                        <textarea name="reporte_inventario" id="novedades_sistema" rows="4" class="form-control bg-light" readonly>Apertura de turno sin novedades en inventario.</textarea>
                     </div>
 
                     {{-- Campo libre de observaciones opcionales (Sin required) --}}

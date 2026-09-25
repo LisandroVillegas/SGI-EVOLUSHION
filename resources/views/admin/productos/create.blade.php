@@ -74,10 +74,7 @@
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="imagen">Imagen</label>
-                                <input type="file" class="form-control-file" name="imagen">
-                            </div>
+                        
                         </div>
                     </div>
                     <hr>

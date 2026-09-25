@@ -16,11 +16,11 @@ class Producto extends Model
         'descripcion',
         'stock',
         'precio_venta',
-        'imagen',
+        
     ];
 
     public function categoria()
     {
-        return $this->belongsTo(Categoria::class);
+        return $this->belongsTo(Categoria::class)->withTrashed();
     }
 }

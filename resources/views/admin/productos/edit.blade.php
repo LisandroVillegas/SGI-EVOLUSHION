@@ -72,13 +72,7 @@
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="imagen">Imagen</label>
-                                <input type="file" class="form-control-file" name="imagen">
-                                @if($producto->imagen)
-                                    <br><img src="{{ asset('storage/'.$producto->imagen) }}" width="80px" class="img-thumbnail">
-                                @endif
-                            </div>
+                            
                         </div>
                     </div>
                     <hr>

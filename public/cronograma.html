@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cronograma de Actividades — Proyecto Evolushion</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2canvas para exportar en PNG de alta resolución -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f4f6f9;
+            color: #212529;
+            padding: 30px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Contenedor de acciones (Botones) */
+        .actions-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+            width: 100%;
+            max-width: 1100px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 18px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-png {
+            background-color: #1f4e78;
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(31, 78, 120, 0.3);
+        }
+        .btn-png:hover {
+            background-color: #163755;
+            transform: translateY(-1px);
+        }
+
+        .btn-print {
+            background-color: #28a745;
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
+        }
+        .btn-print:hover {
+            background-color: #218838;
+            transform: translateY(-1px);
+        }
+
+        /* Lienzo principal capturable */
+        .cronograma-card {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        /* Título */
+        .cronograma-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 25px;
+            letter-spacing: -0.3px;
+        }
+
+        /* Tabla del Cronograma */
+        .gantt-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .gantt-table th,
+        .gantt-table td {
+            border: 1px solid #c8d1dc;
+            padding: 8px 10px;
+            height: 38px;
+        }
+
+        /* Cabecera */
+        .gantt-table thead th {
+            background-color: #1b4f72; /* Azul institucional exacto */
+            color: #ffffff;
+            font-weight: 700;
+            text-align: center;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .gantt-table thead th.col-actividad {
+            text-align: center;
+            width: 46%;
+        }
+
+        .gantt-table thead th.col-mes {
+            width: 4.5%;
+        }
+
+        /* Celdas de la columna Actividad */
+        .gantt-table tbody td.actividad-cell {
+            text-align: left;
+            font-weight: 500;
+            color: #2c3e50;
+            padding-left: 14px;
+        }
+
+        /* Celdas de Estado / Colores */
+        .cell-green {
+            background-color: #70ad47 !important; /* Verde ejecución */
+        }
+
+        .cell-yellow {
+            background-color: #f8be32 !important; /* Amarillo traslape */
+        }
+
+        /* Fila de Leyenda */
+        .leyenda-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid #edf2f7;
+            font-size: 12.5px;
+            color: #4a5568;
+            font-weight: 600;
+        }
+
+        .leyenda-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .leyenda-box {
+            width: 22px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+        }
+
+        .leyenda-green { background-color: #70ad47; }
+        .leyenda-yellow { background-color: #f8be32; }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .actions-bar {
+                display: none;
+            }
+            .cronograma-card {
+                box-shadow: none;
+                padding: 10px;
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Barra de Herramientas -->
+    <div class="actions-bar">
+        <button class="btn btn-png" id="btnDescargarPng">
+            <i class="fas fa-camera"></i> Descargar como Imagen (PNG)
+        </button>
+        <button class="btn btn-print" onclick="window.print()">
+            <i class="fas fa-print"></i> Imprimir / Guardar en PDF
+        </button>
+    </div>
+
+    <!-- Contenedor del Cronograma -->
+    <div class="cronograma-card" id="cronogramaCanvas">
+        <h1 class="cronograma-title">Cronograma de Actividades — Proyecto Evolushion</h1>
+
+        <table class="gantt-table">
+            <thead>
+                <tr>
+                    <th class="col-actividad">ACTIVIDAD</th>
+                    <th class="col-mes">ENE</th>
+                    <th class="col-mes">FEB</th>
+                    <th class="col-mes">MAR</th>
+                    <th class="col-mes">ABR</th>
+                    <th class="col-mes">MAY</th>
+                    <th class="col-mes">JUN</th>
+                    <th class="col-mes">JUL</th>
+                    <th class="col-mes">AGO</th>
+                    <th class="col-mes">SEP</th>
+                    <th class="col-mes">OCT</th>
+                    <th class="col-mes">NOV</th>
+                    <th class="col-mes">DIC</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 1 -->
+                <tr>
+                    <td class="actividad-cell">Levantamiento de requisitos y análisis operativo en Coctelería Evolushion</td>
+                    <td class="cell-green"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <!-- 2 -->
+                <tr>
+                    <td class="actividad-cell">Diseño de modelo de datos (MySQL) y arquitectura MVC</td>
+                    <td class="cell-green"></td>
+                    <td class="cell-yellow"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <!-- 3 -->
+                <tr>
+                    <td class="actividad-cell">Maquetación y diseño de interfaz (Blade + AdminLTE 3.16)</td>
+                    <td></td>
+                    <td class="cell-green"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <!-- 4 -->
+                <tr>
+                    <td class="actividad-cell">Desarrollo Backend (Laravel / PHP 8.3)</td>
+                    <td></td>
+                    <td class="cell-green"></td>
+                    <td class="cell-yellow"></td>
+                    <td class="cell-yellow"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <!-- 5 -->
+                <tr>
+                    <td class="actividad-cell">Desarrollo Frontend e integración (Bootstrap 5, Vite, SweetAlert2)</td>
+                    <td></td>
+                    <td></td>
+                    <td class="cell-green"></td>
+                    <td class="cell-yellow"></td>
+                    <td class="cell-yellow"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <!-- 6 -->
+                <tr>
+                    <td class="actividad-cell">CRUD de módulos (Categorías, Productos, Compras, Promociones)</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td class="cell-green"></td>
+                    <td class="cell-yellow"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <!-- 7 -->
+                <tr>
+                    <td class="actividad-cell">Módulo de Punto de Venta (POS) y Control de Turnos / Arqueo de Caja</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td class="cell-green"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <!-- 8 -->
+                <tr>
+                    <td class="actividad-cell">Reporte Diario Web y Exportación a PDF (DomPDF)</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td class="cell-green"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <!-- 9 -->
+                <tr>
+                    <td class="actividad-cell">Pruebas funcionales integrales (Validación RF01 - RF13)</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td class="cell-green"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <!-- 10 -->
+                <tr>
+                    <td class="actividad-cell">Corrección de errores y depuración</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td class="cell-green"></td>
+                    <td class="cell-yellow"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <!-- 11 -->
+                <tr>
+                    <td class="actividad-cell">Documentación del trabajo de grado (Metodología en Cascada)</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td class="cell-green"></td>
+                    <td class="cell-yellow"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <!-- 12 -->
+                <tr>
+                    <td class="actividad-cell">Sustentación del proyecto</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td class="cell-green"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Leyenda -->
+        <div class="leyenda-container">
+            <div class="leyenda-item">
+                <div class="leyenda-box leyenda-green"></div>
+                <span>Fase de Ejecución Planificada</span>
+            </div>
+            <div class="leyenda-item">
+                <div class="leyenda-box leyenda-yellow"></div>
+                <span>Fase Complementaria / Traslape y Refinamiento</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script para descarga directa en PNG -->
+    <script>
+        document.getElementById('btnDescargarPng').addEventListener('click', function() {
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando PNG...';
+            btn.disabled = true;
+
+            const element = document.getElementById('cronogramaCanvas');
+
+            html2canvas(element, {
+                scale: 2.5, // Alta resolución para documentos de Word / Tesis
+                backgroundColor: '#ffffff',
+                useCORS: true
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'cronograma_actividades_evolushion.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }).catch(err => {
+                alert('Ocurrió un error al generar la imagen: ' + err);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>

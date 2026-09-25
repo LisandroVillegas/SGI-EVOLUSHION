@@ -31,7 +31,6 @@
                             <th style="text-align: center">Nombre</th>
                             <th style="text-align: center">Precio Venta</th>
                             <th style="text-align: center">Stock</th>
-                            <th style="text-align: center">Imagen</th>
                             <th style="text-align: center">Acciones</th>
                         </tr>
                     </thead>
@@ -44,13 +43,7 @@
                                 <td style="text-align: center; vertical-align: middle;">{{ $producto->nombre }}</td>
                                 <td style="text-align: center; vertical-align: middle;">${{ number_format($producto->precio_venta, 0, ',', '.') }}</td>
                                 <td style="text-align: center; vertical-align: middle;">{{ $producto->stock }}</td>
-                                <td style="text-align: center; vertical-align: middle;">
-                                    @if($producto->imagen)
-                                        <img src="{{ asset('storage/'.$producto->imagen) }}" alt="Imagen" width="40px" class="img-thumbnail">
-                                    @else
-                                        Sin imagen
-                                    @endif
-                                </td>
+                        
                                 <td style="text-align: center; vertical-align: middle;">
                                     <div style="display: flex; justify-content: center; align-items: center; gap: 4px;">
                                         <!-- Botón Ver (Ruta en singular: /admin/producto/) -->

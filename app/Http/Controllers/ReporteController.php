@@ -8,6 +8,7 @@ use App\Models\TurnoDetalle;
 use App\Models\VentaDetalle;
 use App\Models\Producto;
 use App\Models\Compra;
+use App\Models\Categoria;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -51,7 +52,7 @@ class ReporteController extends Controller
         return $pdf->stream('Reporte_Diario_' . $fecha . '.pdf');
     }
 
-   private function obtenerDatosReporte($fecha)
+    private function obtenerDatosReporte($fecha)
     {
         // 1. PRIORIDAD ABSOLUTA: Si hay un turno ABIERTO actualmente, lo tomamos sin importar la fecha del calendario
         $turno = Turno::with('user')->whereNull('fecha_cierre')->latest('fecha_inicio')->first();
@@ -97,6 +98,7 @@ class ReporteController extends Controller
                 'totalEfectivo'        => 0,
                 'totalNequi'           => 0,
                 'totalTransferencia'   => 0,
+                'totalDescuentos'      => 0,
                 'totalFiadoNuevo'      => 0,
                 'totalFiados'          => 0,
                 'fiadosDelDia'         => collect(),
@@ -104,10 +106,12 @@ class ReporteController extends Controller
                 'totalCobradoFiados'   => 0,
                 'totalGastos'          => 0,
                 'gastos'               => 0,
-                'coctelesPorPrecio'    => collect(),
-                'inventarioNevera'     => Producto::with('categoria')->whereHas('categoria', function ($q) { $q->where('nombre', 'LIKE', '%nevera%'); })->get(),
-                'ventasNevera'         => collect(),
-                'efectivoNevera'       => 0,
+                'categorias'           => Categoria::orderBy('nombre', 'asc')->get()->map(function($c) {
+                    $c->ventas = collect();
+                    $c->total_vendido = 0;
+                    $c->total_descuento = 0;
+                    return $c;
+                }),
                 'inventarioVasos'      => Producto::where('nombre', 'LIKE', '%Vaso%')->get(),
                 'baseInicial'          => 0,
                 'sueldo'               => 0,
@@ -140,6 +144,7 @@ class ReporteController extends Controller
         if ($turno) {
             $cobrosFiadosDia = Venta::with(['user', 'detalles.producto'])
                 ->where('estado_pago', 'pagado')
+                ->where('metodo_pago', 'fiado')
                 ->where(function($query) use ($turno, $inicioDia, $finDia) {
                     $query->where('turno_pago_id', $turno->id)
                           ->orWhere(function($sub) use ($inicioDia, $finDia) {
@@ -157,6 +162,7 @@ class ReporteController extends Controller
         } else {
             $cobrosFiadosDia = Venta::with(['user', 'detalles.producto'])
                 ->where('estado_pago', 'pagado')
+                ->where('metodo_pago', 'fiado')
                 ->where(function($query) use ($fecha, $inicioDia, $finDia) {
                     $query->whereBetween('fecha_pago', [$inicioDia, $finDia])
                           ->orWhereDate('fecha_pago', $fecha)
@@ -172,26 +178,27 @@ class ReporteController extends Controller
 
         $totalCobradoFiados = $cobrosFiadosDia->sum('total');
 
-        // Ventas normales de contado del período
+        // Ventas normales de contado del período (Efectivo y Transferencias inmediatas)
         $ventasContadoHoy = $ventas->where('estado_pago', 'pagado')
-            ->where('metodo_pago', '!=', 'fiado')
-            ->whereNull('cliente_fiado');
+            ->where('metodo_pago', '!=', 'fiado');
 
         // Totales financieros
         $totalVendido = $ventasContadoHoy->sum('total') + $totalCobradoFiados;
 
-        // Efectivo Recibido
+        // Efectivo Recibido (Sólo dinero físico en caja)
         $efectivoVentasHoy = $ventasContadoHoy->where('metodo_pago', 'efectivo')->sum('total') 
             + $ventasContadoHoy->where('metodo_pago', 'mixto')->sum('pago_efectivo');
             
-        $efectivoCobrosFiados = $cobrosFiadosDia->sum('pago_efectivo') ?: $cobrosFiadosDia->where('metodo_pago', 'efectivo')->sum('total');
+        $efectivoCobrosFiados = $cobrosFiadosDia->where('metodo_pago_saldo', 'efectivo')->sum('total')
+            ?: ($cobrosFiadosDia->sum('pago_efectivo') ?: $cobrosFiadosDia->where('metodo_pago', 'efectivo')->sum('total'));
         $totalEfectivo = $efectivoVentasHoy + $efectivoCobrosFiados;
 
-        // Transferencias / Nequi
+        // Transferencias / Nequi (Dinero electrónico bancario)
         $nequiVentasHoy = $ventasContadoHoy->whereIn('metodo_pago', ['transferencia', 'nequi'])->sum('total') 
             + $ventasContadoHoy->where('metodo_pago', 'mixto')->sum('pago_transferencia');
 
-        $nequiCobrosFiados = $cobrosFiadosDia->sum('pago_transferencia') ?: $cobrosFiadosDia->whereIn('metodo_pago', ['transferencia', 'nequi'])->sum('total');
+        $nequiCobrosFiados = $cobrosFiadosDia->where('metodo_pago_saldo', 'transferencia')->sum('total')
+            ?: ($cobrosFiadosDia->sum('pago_transferencia') ?: $cobrosFiadosDia->whereIn('metodo_pago', ['transferencia', 'nequi'])->sum('total'));
         $totalNequi = $nequiVentasHoy + $nequiCobrosFiados;
 
         // 3. Control de Stock del Turno
@@ -232,45 +239,76 @@ class ReporteController extends Controller
             $detallesTurno = collect();
         }
 
-        // 4. Agrupación de Cócteles por Rango de Precio
-        $coctelesPorPrecio = VentaDetalle::whereHas('venta', function ($q) use ($inicioDia, $finDia) {
-                $q->whereBetween('created_at', [$inicioDia, $finDia]);
+        // 4. Categorías dinámicas y sus ventas detalladas en el turno
+        $categorias = Categoria::when(in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses(Categoria::class)), function ($q) {
+                $q->withTrashed();
             })
-            ->whereHas('producto.categoria', function ($q) {
-                $q->where('nombre', 'LIKE', '%coctel%');
-            })
-            ->select(
-                'precio_unitario',
-                DB::raw('SUM(cantidad) as total_cantidad'),
-                DB::raw('SUM(subtotal) as total_monto')
-            )
-            ->groupBy('precio_unitario')
-            ->orderBy('precio_unitario', 'asc')
+            ->orderBy('nombre', 'asc')
             ->get();
 
-        // 5. Inventario y Ventas de Nevera
-        $inventarioNevera = Producto::with('categoria')
-            ->whereHas('categoria', function ($q) {
-                $q->where('nombre', 'LIKE', '%nevera%');
-            })->get();
-
-        $ventasNevera = VentaDetalle::whereHas('venta', function ($q) use ($inicioDia, $finDia) {
+        // Obtener detalles de venta del período/turno con relaciones necesarias
+        $detallesVentas = VentaDetalle::whereHas('venta', function ($q) use ($inicioDia, $finDia) {
                 $q->whereBetween('created_at', [$inicioDia, $finDia]);
             })
-            ->whereHas('producto.categoria', function ($q) {
-                $q->where('nombre', 'LIKE', '%nevera%');
-            })
-            ->select('producto_id', DB::raw('SUM(cantidad) as cantidad'), DB::raw('SUM(subtotal) as total'))
-            ->groupBy('producto_id')
-            ->with('producto')
+            ->with(['producto.categoria', 'venta'])
             ->get();
 
-        $efectivoNevera = $ventasNevera->sum('total');
+        // Calcular total general de descuentos otorgados por promociones en el turno
+        $totalDescuentos = $detallesVentas->sum(function ($det) {
+            $precioBase = $det->precio_unitario ?? ($det->producto->precio_venta ?? 0);
+            $subtotalTeorico = $det->cantidad * $precioBase;
+            return max(0, $subtotalTeorico - $det->subtotal);
+        });
 
-        // 6. Inventario de Insumos (Vasos)
+        // Asociar a cada categoría sus ventas detalladas con método de pago, producto y promociones
+        $categorias = $categorias->map(function ($categoria) use ($detallesVentas) {
+            $detallesCategoria = $detallesVentas->filter(function ($det) use ($categoria) {
+                return $det->producto && $det->producto->categoria_id == $categoria->id;
+            });
+
+            // Agrupamos para mostrar consolidado por producto, método de pago y aplicación de promoción
+            $categoria->ventas = $detallesCategoria->groupBy(function ($d) {
+                $precioBase = $d->precio_unitario ?? ($d->producto->precio_venta ?? 0);
+                $descuento = ($d->cantidad * $precioBase) - $d->subtotal;
+                $tienePromo = ($descuento > 0 || ($d->venta && $d->venta->aplica_promocion));
+                $metodo = $d->venta ? $d->venta->metodo_pago : 'efectivo';
+                return $d->producto_id . '_' . $metodo . '_' . ($tienePromo ? '1' : '0');
+            })->map(function ($grupo) {
+                $primerItem = $grupo->first();
+                $cantidadTotal = $grupo->sum('cantidad');
+                $subtotalTotal = $grupo->sum('subtotal');
+                $precioBase = $primerItem->precio_unitario ?? ($primerItem->producto->precio_venta ?? 0);
+                $descuentoTotal = max(0, ($cantidadTotal * $precioBase) - $subtotalTotal);
+
+                return (object) [
+                    'producto'        => $primerItem->producto,
+                    'producto_nombre' => $primerItem->producto->nombre ?? 'N/A',
+                    'cantidad'        => $cantidadTotal,
+                    'precio_unitario' => $precioBase,
+                    'descuento'       => $descuentoTotal,
+                    'tiene_promo'     => $descuentoTotal > 0 || ($primerItem->venta && $primerItem->venta->aplica_promocion),
+                    'metodo_pago'     => $primerItem->venta ? $primerItem->venta->metodo_pago : 'efectivo',
+                    'subtotal'        => $subtotalTotal,
+                ];
+            })->values();
+
+            $categoria->total_vendido = $categoria->ventas->sum('subtotal');
+            $categoria->total_descuento = $categoria->ventas->sum('descuento');
+
+            return $categoria;
+        });
+
+        // Si se usa SoftDeletes, descartar categorías borradas que NO hayan tenido ventas en este turno
+        if (in_array(\Illuminate\Database\Eloquent\SoftDeletes::class, class_uses(Categoria::class))) {
+            $categorias = $categorias->filter(function ($cat) {
+                return !$cat->trashed() || $cat->ventas->isNotEmpty();
+            });
+        }
+
+        // 5. Inventario de Insumos (Vasos)
         $inventarioVasos = Producto::where('nombre', 'LIKE', '%Vaso%')->get();
 
-        // 7. Gastos del período (Sincronizado con el módulo de turnos)
+        // 6. Gastos del período (Sincronizado con el módulo de turnos)
         $totalGastos = 0;
         
         if ($turno) {
@@ -281,10 +319,14 @@ class ReporteController extends Controller
             $totalGastos = Compra::whereBetween('created_at', [$inicioDia, $finDia])->sum('total');
         }
 
-        // 8. Extracción correcta de columnas de la tabla 'turnos'
+        // 7. Extracción correcta de columnas de la tabla 'turnos'
         $baseInicial   = ($turno && isset($turno->base_caja)) ? $turno->base_caja : 0;
         $sueldo        = ($turno && isset($turno->sueldo)) ? $turno->sueldo : 0;
-        $baseSiguiente = 0; 
+        
+        // AQUÍ ESTABLECEMOS LA BASE SIGUIENTE DINÁMICA: Lee la guardada en el turno o toma la base inicial por defecto si está abierto
+        $baseSiguiente = ($turno && isset($turno->base_siguiente_turno) && $turno->base_siguiente_turno !== null) 
+                         ? $turno->base_siguiente_turno 
+                         : $baseInicial; 
         
         // Liquidación de Cuadre de Caja
         $dineroEntregado = ($baseInicial + $totalEfectivo) - ($totalGastos + $sueldo + $baseSiguiente);
@@ -299,6 +341,7 @@ class ReporteController extends Controller
             'totalEfectivo'        => $totalEfectivo,
             'totalNequi'           => $totalNequi,
             'totalTransferencia'   => $totalNequi,
+            'totalDescuentos'      => $totalDescuentos,
             'totalFiadoNuevo'      => $totalFiadoNuevo,
             'totalFiados'          => $totalFiadoNuevo,
             'fiadosDelDia'         => $fiadosDelDia,
@@ -306,10 +349,7 @@ class ReporteController extends Controller
             'totalCobradoFiados'   => $totalCobradoFiados,
             'totalGastos'          => $totalGastos,
             'gastos'               => $totalGastos,
-            'coctelesPorPrecio'    => $coctelesPorPrecio,
-            'inventarioNevera'     => $inventarioNevera,
-            'ventasNevera'         => $ventasNevera,
-            'efectivoNevera'       => $efectivoNevera,
+            'categorias'           => $categorias,
             'inventarioVasos'      => $inventarioVasos,
             'baseInicial'          => $baseInicial,
             'sueldo'               => $sueldo,

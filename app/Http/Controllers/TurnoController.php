@@ -32,9 +32,17 @@ class TurnoController extends Controller
                 ->with('icono', 'info');
         }
 
+        $ultimoTurnoCerrado = Turno::whereIn('estado', ['cerrado_ok', 'cerrado_descuadre'])
+                                    ->orderBy('id', 'desc')
+                                    ->first();
+
+        $baseSugerida = $ultimoTurnoCerrado && $ultimoTurnoCerrado->base_siguiente_turno !== null
+                        ? $ultimoTurnoCerrado->base_siguiente_turno
+                        : ($ultimoTurnoCerrado->base_caja ?? 50000);
+
         $productos = Producto::orderBy('nombre', 'asc')->get();
 
-        return view('admin.turnos.create', compact('productos'));
+        return view('admin.turnos.create', compact('productos', 'baseSugerida'));
     }
 
     public function store(Request $request)
@@ -42,6 +50,7 @@ class TurnoController extends Controller
         $request->validate([
             'base_caja' => 'required|numeric|min:0',
             'notas' => 'nullable|string',
+            'reporte_inventario' => 'nullable|string',
             'productos' => 'required|array',
         ]);
 
@@ -58,12 +67,18 @@ class TurnoController extends Controller
         try {
             DB::beginTransaction();
 
+            $notasApertura = $request->input('reporte_inventario', 'Apertura de turno sin novedades en inventario.');
+
+            if ($request->filled('notas')) {
+                $notasApertura .= "\n\nObservaciones Adicionales: " . $request->notas;
+            }
+
             $turno = new Turno();
             $turno->user_id = Auth::id();
             $turno->fecha_inicio = Carbon::now();
             $turno->base_caja = $request->base_caja;
             $turno->estado = 'abierto';
-            $turno->notas = $request->notas;
+            $turno->notas = $notasApertura;
             $turno->save();
 
             foreach ($request->productos as $prod) {
@@ -78,12 +93,18 @@ class TurnoController extends Controller
                     'stock_fisico_apertura' => $stockFisico,
                     'diferencia_apertura' => $diferencia,
                 ]);
+
+                $producto = Producto::find($prod['id']);
+                if ($producto) {
+                    $producto->stock = $stockFisico;
+                    $producto->save();
+                }
             }
 
             DB::commit();
 
             return redirect()->route('turnos.index')
-                ->with('mensaje', 'Turno e inventario inicial registrados exitosamente')
+                ->with('mensaje', 'Turno abierto e inventario inicial registrado exitosamente.')
                 ->with('icono', 'success');
 
         } catch (\Exception $e) {
@@ -97,53 +118,53 @@ class TurnoController extends Controller
     public function show($id)
     {
         $turno = Turno::with([
-            'detalles.producto', 
-            'user', 
-            'compras.detalles.producto', 
+            'detalles.producto',
+            'user',
+            'compras.detalles.producto',
             'ventas.detalles.producto',
             'cobrosFiados'
         ])->findOrFail($id);
-        
+       
         $totalCompras = $turno->compras ? $turno->compras->sum('total') : 0;
-        
-        // Ventas de contado en efectivo de este turno (excluye ventas fiadas)
+       
         $totalVentasEfectivo = $turno->ventas ? $turno->ventas->where('metodo_pago', '!=', 'fiado')->whereNull('cliente_fiado')->sum('pago_efectivo') : 0;
         $totalVentasTransferencia = $turno->ventas ? $turno->ventas->where('metodo_pago', '!=', 'fiado')->whereNull('cliente_fiado')->sum('pago_transferencia') : 0;
-        
+       
         $ventasFiadas = $turno->ventas ? $turno->ventas->where('metodo_pago', 'fiado') : collect();
         $totalFiadoOtorgado = $ventasFiadas->sum('total');
 
-        // Fiados cobrados en este turno (soporta tanto los nuevos con turno_pago_id como los históricos)
         $cobrosFiadosNuevos = $turno->cobrosFiados ?? collect();
         $cobrosFiadosAntiguos = $turno->ventas ? $turno->ventas->where('estado_pago', 'pagado')->whereNotNull('cliente_fiado')->whereNull('turno_pago_id') : collect();
         $cobrosFiados = $cobrosFiadosNuevos->merge($cobrosFiadosAntiguos)->unique('id');
         $totalFiadoCobrado = $cobrosFiados->sum('pago_efectivo');
 
         $totalVentas = $turno->ventas ? $turno->ventas->sum('total') : 0;
-        
+       
+        $baseSiguiente = $turno->base_siguiente_turno ?? $turno->base_caja;
+
         if ($turno->estado === 'abierto') {
             $pagoTrabajadora = 0;
-            $dineroEsperado = ($turno->base_caja + $totalVentasEfectivo + $totalFiadoCobrado) - $totalCompras;
+            $dineroEsperado = ($turno->base_caja + $totalVentasEfectivo + $totalFiadoCobrado) - $totalCompras - $baseSiguiente;
             $efectivoReal = 0;
             $diferenciaCalculada = 0;
         } else {
             $pagoTrabajadora = !is_null($turno->sueldo) ? $turno->sueldo : 0;
-            $dineroEsperado = !is_null($turno->total_efectivo_esperado) 
-                ? $turno->total_efectivo_esperado 
-                : (($turno->base_caja + $totalVentasEfectivo + $totalFiadoCobrado) - $totalCompras - $pagoTrabajadora);
-                
+            $dineroEsperado = !is_null($turno->total_efectivo_esperado)
+                ? $turno->total_efectivo_esperado
+                : (($turno->base_caja + $totalVentasEfectivo + $totalFiadoCobrado) - $totalCompras - $pagoTrabajadora - $baseSiguiente);
+               
             $efectivoReal = !is_null($turno->total_efectivo_real) ? $turno->total_efectivo_real : 0;
-            $diferenciaCalculada = !is_null($turno->total_descuadre_dinero) 
-                ? $turno->total_descuadre_dinero 
+            $diferenciaCalculada = !is_null($turno->total_descuadre_dinero)
+                ? $turno->total_descuadre_dinero
                 : ($efectivoReal - $dineroEsperado);
         }
 
         return view('admin.turnos.show', compact(
-            'turno', 
-            'totalCompras', 
-            'pagoTrabajadora', 
-            'totalVentasEfectivo', 
-            'totalVentasTransferencia', 
+            'turno',
+            'totalCompras',
+            'pagoTrabajadora',
+            'totalVentasEfectivo',
+            'totalVentasTransferencia',
             'totalFiadoOtorgado',
             'totalFiadoCobrado',
             'totalVentas',
@@ -156,7 +177,7 @@ class TurnoController extends Controller
     public function edit($id)
     {
         $turno = Turno::with([
-            'detalles.producto', 
+            'detalles.producto',
             'user',
             'compras.detalles.producto',
             'ventas.detalles.producto',
@@ -176,7 +197,6 @@ class TurnoController extends Controller
         $ventasFiadas = $turno->ventas ? $turno->ventas->where('metodo_pago', 'fiado') : collect();
         $totalFiadoOtorgado = $ventasFiadas->sum('total');
 
-        // Fiados cobrados en este turno
         $cobrosFiadosNuevos = $turno->cobrosFiados ?? collect();
         $cobrosFiadosAntiguos = $turno->ventas ? $turno->ventas->where('estado_pago', 'pagado')->whereNotNull('cliente_fiado')->whereNull('turno_pago_id') : collect();
         $cobrosFiados = $cobrosFiadosNuevos->merge($cobrosFiadosAntiguos)->unique('id');
@@ -197,10 +217,17 @@ class TurnoController extends Controller
             }
         }
 
+        // Obtener Compras Rápidas / Egresos del turno
+        $comprasRapidas = $turno->compras ? $turno->compras->where('tipo', 'rapida') : collect();
+        $detalleEgresosTexto = [];
+        foreach ($comprasRapidas as $egreso) {
+            $detalleEgresosTexto[] = "- EGRESO / COMPRA RÁPIDA: " . ($egreso->concepto ?? 'Sin concepto') . " ($" . number_format($egreso->total, 0, ',', '.') . ")";
+        }
+
         foreach ($turno->detalles as $detalle) {
             $comprasDelProducto = 0;
             $ventasDelProducto = 0;
-            
+           
             if ($turno->compras) {
                 foreach ($turno->compras as $compra) {
                     if ($compra->detalles) {
@@ -221,23 +248,25 @@ class TurnoController extends Controller
         }
 
         return view('admin.turnos.edit', compact(
-            'turno', 
-            'totalCompras', 
+            'turno',
+            'totalCompras',
             'pagoTrabajadora',
-            'totalVentasEfectivo', 
+            'totalVentasEfectivo',
             'totalFiadoOtorgado',
             'totalFiadoCobrado',
-            'dineroEsperado', 
-            'detalleComprasTexto'
+            'dineroEsperado',
+            'detalleComprasTexto',
+            'detalleEgresosTexto'
         ));
     }
 
-   public function update(Request $request, $id)
-    { 
+    public function update(Request $request, $id)
+    {
         $request->validate([
             'total_efectivo_real' => 'required',
             'pago_trabajadora' => 'nullable',
-            'sueldo' => 'nullable', 
+            'sueldo' => 'nullable',
+            'base_siguiente_turno' => 'nullable|numeric|min:0',
             'productos' => 'required|array',
             'reporte_descuadre_cierre' => 'required|string',
             'notas_cajero' => 'nullable|string',
@@ -273,7 +302,6 @@ class TurnoController extends Controller
                     }
 
                     $stockEsperadoCierre = ($detalle->stock_fisico_apertura + $comprasDelProducto) - $ventasDelProducto;
-                    // Limpiar stock por si viene con formato extraño
                     $stockFisicoCierre = (int) str_replace(['.', ','], ['', ''], $prod['stock_fisico']);
                     $diferenciaCierre = $stockFisicoCierre - $stockEsperadoCierre;
 
@@ -282,54 +310,120 @@ class TurnoController extends Controller
                         'stock_fisico_cierre' => $stockFisicoCierre,
                         'diferencia_cierre' => $diferenciaCierre,
                     ]);
+
+                    $producto = Producto::find($prod['id']);
+                    if ($producto) {
+                        $producto->stock = $stockFisicoCierre;
+                        $producto->save();
+                    }
                 }
             }
 
-            // LIMPIEZA DE FORMATOS MONEDA (Elimina puntos de miles colombianos y cambia coma decimal si la hay)
             $rawEfectivoReal = $request->input('total_efectivo_real', 0);
             $efectivoReal = (float) str_replace(['.', ','], ['', '.'], is_numeric($rawEfectivoReal) ? $rawEfectivoReal : str_replace(['$', ' '], '', $rawEfectivoReal));
 
             $rawSueldo = $request->input('pago_trabajadora') ?? $request->input('sueldo', 0);
             $pagoTrabajadora = (float) str_replace(['.', ','], ['', '.'], is_numeric($rawSueldo) ? $rawSueldo : str_replace(['$', ' '], '', $rawSueldo));
 
-            // Totales de compras y ventas
+            $baseSiguienteTurno = (float) $request->input('base_siguiente_turno', $turno->base_caja);
+
             $totalCompras = $turno->compras ? $turno->compras->sum('total') : 0;
             $totalVentasEfectivo = $turno->ventas ? $turno->ventas->where('metodo_pago', '!=', 'fiado')->whereNull('cliente_fiado')->sum('pago_efectivo') : 0;
 
-            // Fiados cobrados en este turno
             $cobrosFiadosNuevos = $turno->cobrosFiados ?? collect();
             $cobrosFiadosAntiguos = $turno->ventas ? $turno->ventas->where('estado_pago', 'pagado')->whereNotNull('cliente_fiado')->whereNull('turno_pago_id') : collect();
             $cobrosFiados = $cobrosFiadosNuevos->merge($cobrosFiadosAntiguos)->unique('id');
             $totalFiadoCobrado = $cobrosFiados->sum('pago_efectivo');
 
-            // Cálculo matemático oficial en el servidor
-            $dineroEsperado = ($turno->base_caja + $totalVentasEfectivo + $totalFiadoCobrado) - $totalCompras - $pagoTrabajadora;
-            
-            // Diferencia real: Lo que hay físicamente en caja menos lo que matemáticamente debería haber
+            $dineroEsperado = ($turno->base_caja + $totalVentasEfectivo + $totalFiadoCobrado) - $totalCompras - $pagoTrabajadora - $baseSiguienteTurno;
             $diferenciaEfectivo = $efectivoReal - $dineroEsperado;
 
-            $notasAperturaOriginales =  $turno->notas;
-            $notasFinales = $request->reporte_descuadre_cierre;
-            if ($request->filled('notas_cajero')) {
-                $notasFinales = "Notas del cajero: " . $request->notas_cajero . "\n\n" . $notasFinales;
+            // GENERACIÓN ESTRICTA DEL REPORTE EN EL BACKEND (Seguridad anti-manipulación)
+            $notasCierre = "RESUMEN FINANCIERO DEL TURNO:\n";
+            $notasCierre .= "--------------------------------\n";
+            $notasCierre .= "(+) Base Inicial: $" . number_format($turno->base_caja, 0, ',', '.') . "\n";
+            $notasCierre .= "(+) Ventas en Efectivo: $" . number_format($totalVentasEfectivo, 0, ',', '.') . "\n";
+            if ($totalFiadoCobrado > 0) {
+                $notasCierre .= "(+) Abonos a Fiados (Caja): $" . number_format($totalFiadoCobrado, 0, ',', '.') . "\n";
             }
-            if (!empty($notasAperturaOriginales)) { 
+            $notasCierre .= "(-) Compras / Egresos: $" . number_format($totalCompras, 0, ',', '.') . "\n";
+            if ($pagoTrabajadora > 0) {
+                $notasCierre .= "(-) Pago a Trabajadora / Sueldo: $" . number_format($pagoTrabajadora, 0, ',', '.') . "\n";
+            }
+            if ($baseSiguienteTurno > 0) {
+                $notasCierre .= "(-) Base para el Siguiente Turno: $" . number_format($baseSiguienteTurno, 0, ',', '.') . "\n";
+            }
+            $notasCierre .= "--------------------------------\n";
+            $notasCierre .= "(=) DINERO ESPERADO EN CAJA: $" . number_format($dineroEsperado, 0, ',', '.') . "\n";
+            $notasCierre .= "(=) EFECTIVO REAL CONTADO: $" . number_format($efectivoReal, 0, ',', '.') . "\n\n";
 
-            $notasFinales = "--- NOTAS DE APERTURA ---\n". $notasAperturaOriginales. "\n\n--- CIERRE DE TURNO ---\n" . $notasFinales;
+            if ($dineroEsperado < 0) {
+                $notasCierre .= "ADVERTENCIA: Los egresos y sueldos superan el efectivo disponible en caja.\n\n";
+            }
 
-              }
+            if ($diferenciaEfectivo < -0.01) {
+                $notasCierre .= "- FALTANTE DE DINERO EN CAJA: -$" . number_format(abs($diferenciaEfectivo), 0, ',', '.') . "\n";
+            } elseif ($diferenciaEfectivo > 0.01) {
+                $notasCierre .= "- SOBRANTE DE DINERO EN CAJA: +$" . number_format($diferenciaEfectivo, 0, ',', '.') . "\n";
+            } else {
+                $notasCierre .= "- CAJA CUADRADA CORRECTAMENTE\n";
+            }
 
-            // Estado basado en la diferencia (tolerancia menor a 1 centavo)
+            $notasCierre .= "\nDETALLE DE INVENTARIO Y EGRESOS:\n";
+            $hayNovedades = false;
+
+            if ($turno->compras) {
+                foreach ($turno->compras->where('tipo', 'rapida') as $egreso) {
+                    $notasCierre .= "- EGRESO / COMPRA RÁPIDA: " . ($egreso->concepto ?? 'Sin concepto') . " ($" . number_format($egreso->total, 0, ',', '.') . ")\n";
+                    $hayNovedades = true;
+                }
+            }
+
+            foreach ($request->productos as $prod) {
+                $detalle = TurnoDetalle::with('producto')->where('turno_id', $turno->id)->where('producto_id', $prod['id'])->first();
+                if ($detalle && isset($detalle->diferencia_cierre)) {
+                    $dif = $detalle->diferencia_cierre;
+                    if ($dif < 0) {
+                        $notasCierre .= "- FALTANTE EN CIERRE: " . ($detalle->producto->nombre ?? 'Producto') . " (" . abs($dif) . " und)\n";
+                        $hayNovedades = true;
+                    } elseif ($dif > 0) {
+                        $notasCierre .= "- SOBRANTE EN CIERRE: " . ($detalle->producto->nombre ?? 'Producto') . " (+" . $dif . " und)\n";
+                        $hayNovedades = true;
+                    }
+                }
+            }
+
+            if (!$hayNovedades) {
+                $notasCierre .= "- Sin novedades de inventario ni egresos.\n";
+            }
+
+            if ($request->filled('notas_cajero')) {
+                $notasCierre .= "\nObservaciones del Cajero:\n" . $request->notas_cajero . "\n";
+            }
+
+            // Concatenar notas de apertura si las hay
+            $notasFinales = "";
+            $notasAperturaOriginales = $turno->notas;
+            // Evitar duplicar "=== NOTAS / APERTURA ===" si ya estaba
+            if (!empty($notasAperturaOriginales)) {
+                if (strpos($notasAperturaOriginales, '=== NOTAS / APERTURA ===') === false) {
+                    $notasFinales .= "=== NOTAS / APERTURA ===\n" . $notasAperturaOriginales . "\n\n";
+                } else {
+                    $notasFinales .= $notasAperturaOriginales . "\n\n";
+                }
+            }
+            $notasFinales .= "=== CIERRE DE TURNO ===\n" . $notasCierre;
+
             $estadoTurno = abs($diferenciaEfectivo) < 0.01 ? 'cerrado_ok' : 'cerrado_descuadre';
 
-            // Guardar en base de datos con los valores limpios y reales
             $turno->update([
                 'fecha_cierre' => now(),
                 'total_efectivo_esperado' => $dineroEsperado,  
                 'total_efectivo_real' => $efectivoReal,
-                'total_descuadre_dinero' => $diferenciaEfectivo, 
+                'total_descuadre_dinero' => $diferenciaEfectivo,
                 'estado' => $estadoTurno,                      
-                'sueldo' => $pagoTrabajadora,                  
+                'sueldo' => $pagoTrabajadora,
+                'base_siguiente_turno' => $baseSiguienteTurno,                      
                 'notas' => $notasFinales,
             ]);
 
@@ -346,6 +440,7 @@ class TurnoController extends Controller
                 ->with('icono', 'error');
         }
     }
+
     public function registrarVentaOlvidada(Request $request)
     {
         $request->validate([
@@ -431,18 +526,16 @@ class TurnoController extends Controller
 
     public function destroy($id)
     {
-
         try {
             DB::beginTransaction();
 
             $turno = Turno::with([
-                'ventas.detalles', 
-                'compras.detalles', 
-                'cobrosFiados', 
+                'ventas.detalles',
+                'compras.detalles',
+                'cobrosFiados',
                 'detalles'
             ])->findOrFail($id);
 
-            // 2. Revertir el stock de las ventas realizadas en este turno
             if ($turno->ventas) {
                 foreach ($turno->ventas as $venta) {
                     if ($venta->detalles) {
@@ -458,7 +551,6 @@ class TurnoController extends Controller
                 $turno->ventas()->delete();
             }
 
-            // 3. Revertir el stock de las compras realizadas en este turno
             if ($turno->compras) {
                 foreach ($turno->compras as $compra) {
                     if ($compra->detalles) {
@@ -474,7 +566,6 @@ class TurnoController extends Controller
                 $turno->compras()->delete();
             }
 
-            // 4. Si en este turno se cobraron fiados de otros turnos, volverlos a estado pendiente
             if ($turno->cobrosFiados) {
                 foreach ($turno->cobrosFiados as $fiadoCobrado) {
                     $fiadoCobrado->update([
@@ -488,10 +579,7 @@ class TurnoController extends Controller
                 }
             }
 
-            // 5. Eliminar detalles del conteo de apertura/cierre
             $turno->detalles()->delete();
-
-            // 6. Eliminar el turno
             $turno->delete();
 
             DB::commit();

@@ -326,6 +326,13 @@ return [
             'active' => ['admin/productos*']
         ],
         [
+            'text' => 'Promociones',
+            'url' => 'admin/promociones',
+            'icon' => 'fas fa-fw fa-tags',
+            'classes' => 'bg-gray text-white',
+            'active' => ['admin/promociones*']
+        ],
+        [
             'text' => 'Compras',
             'url' => 'admin/compras',
             'icon' => 'fas fa-fw fa-shopping-cart',
@@ -354,6 +361,11 @@ return [
             'text' => 'Reporte Diario',
             'url'  => 'admin/reportes/diario',
             'icon' => 'fas fa-fw fa-file-invoice-dollar',
+        ],
+        [
+            'text' => 'Configuración',
+            'url'  => 'configuracion',
+            'icon' => 'fas fa-fw fa-cog',
         ],
 
         

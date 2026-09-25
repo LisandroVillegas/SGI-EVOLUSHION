@@ -21,7 +21,7 @@
                         <th style="width: 50px;" class="text-center">#</th>
                         <th>Fecha y Hora</th>
                         <th>Atendido Por</th>
-                        <th>Cliente / Deudor</th>
+                        <th>Cliente / Deudor / Remitente</th>
                         <th>Método Pago</th>
                         <th class="text-center">Estado Pago</th>
                         <th class="text-right">Total</th>
@@ -35,40 +35,34 @@
                             <td>{{ $venta->created_at->format('d/m/Y h:i A') }}</td>
                             <td>{{ $venta->user->name ?? 'N/A' }}</td>
                             
-                            {{-- CLIENTE / DEUDOR --}}
+                            {{-- CLIENTE / DEUDOR / REMITENTE (Icono unificado) --}}
                             <td>
                                 @if($venta->cliente_fiado)
-                                    @if($venta->estado_pago === 'pendiente')
-                                        <span class="font-weight-bold text-dark text-capitalize">
-                                            <i class="fas fa-user-clock text-warning mr-1" title="Deudor Activo"></i> {{ $venta->cliente_fiado }}
-                                        </span>
-                                    @else
-                                        <span class="font-weight-bold text-dark text-capitalize">
-                                            <i class="fas fa-user-check text-info mr-1" title="Cuenta Saldada"></i> {{ $venta->cliente_fiado }}
-                                        </span>
-                                    @endif
+                                    <span class="font-weight-bold text-dark text-capitalize">
+                                        <i class="fas fa-user mr-1 text-secondary"></i> {{ $venta->cliente_fiado }}
+                                    </span>
                                 @else
-                                    <span class="text-muted"><i class="fas fa-user-alt text-secondary mr-1"></i> Cliente Ocasional</span>
+                                    <span class="text-muted"><i class="fas fa-user mr-1 text-secondary"></i> Cliente Ocasional</span>
                                 @endif
                             </td>
 
-                            {{-- MÉTODO DE PAGO CORREGIDO --}}
+                            {{-- MÉTODO DE PAGO VALIDADO --}}
                             <td>
-                                @if($venta->cliente_fiado && $venta->estado_pago === 'pagado')
+                                @if($venta->metodo_pago === 'transferencia')
+                                    <span class="badge badge-primary px-2 py-1">
+                                        <i class="fas fa-mobile-alt mr-1"></i> Transferencia
+                                    </span>
+                                @elseif($venta->metodo_pago === 'fiado' && $venta->estado_pago === 'pagado')
                                     <span class="badge badge-info px-2 py-1" title="Fiado ya saldado">
                                         <i class="fas fa-hand-holding-usd mr-1"></i> Fiado (Saldado)
                                     </span>
-                                @elseif($venta->metodo_pago === 'fiado' || $venta->estado_pago === 'pendiente')
+                                @elseif($venta->metodo_pago === 'fiado' && $venta->estado_pago === 'pendiente')
                                     <span class="badge badge-warning px-2 py-1">
                                         <i class="fas fa-clock mr-1"></i> Fiado (Pendiente)
                                     </span>
                                 @elseif($venta->metodo_pago === 'efectivo')
                                     <span class="badge badge-success px-2 py-1">
                                         <i class="fas fa-money-bill-wave mr-1"></i> Efectivo
-                                    </span>
-                                @elseif($venta->metodo_pago === 'transferencia')
-                                    <span class="badge badge-primary px-2 py-1">
-                                        <i class="fas fa-mobile-alt mr-1"></i> Transferencia
                                     </span>
                                 @else
                                     <span class="badge badge-secondary px-2 py-1 text-capitalize">{{ $venta->metodo_pago }}</span>
@@ -100,7 +94,7 @@
                                 ${{ number_format($venta->total, 0, ',', '.') }}
                             </td>
 
-                            {{-- ACCIONES CON TEXTO (VER Y ELIMINAR) --}}
+                            {{-- ACCIONES --}}
                             <td class="text-center align-middle">
                                 <div style="display: flex; justify-content: center; align-items: center; gap: 6px;">
                                     <a href="{{ route('ventas.show', $venta->id) }}" 
@@ -108,7 +102,7 @@
                                        title="Ver Detalle">
                                         <i class="fas fa-eye mr-1"></i> Ver
                                     </a>
-                                    <form action="{{ route('ventas.destroy', $venta->id) }}" method="POST" class="d-inline form-secured" data-secured-message="&iquest;Eliminar venta? Stock ser&aacute; devuelto.">
+                                    <form action="{{ route('ventas.destroy', $venta->id) }}" method="POST" class="d-inline form-secured" data-secured-message="¿Eliminar venta? Stock será devuelto.">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" 
@@ -174,7 +168,6 @@
             "order": [[ 0, "desc" ]]
         });
 
-        // Abrir modal de pago para la deuda (Delegación de eventos compatible con DataTables)
         $(document).on('click', '.btn-saldar-deuda', function() {
             let id = $(this).data('id');
             let cliente = $(this).data('cliente');
@@ -188,27 +181,6 @@
 
             $('#modalSaldarDeuda').modal('show');
         });
-
-        // Confirmación para eliminar (Delegación de eventos compatible con DataTables)
-        $(document).on('submit', '.form-eliminar', function(e) {
-            e.preventDefault();
-            let form = this;
-            Swal.fire({
-                title: '¿Eliminar venta?',
-                text: "El inventario será devuelto al stock.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Sí, eliminar',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit();
-                }
-            });
-        });
     });
 </script>
 @stop
-

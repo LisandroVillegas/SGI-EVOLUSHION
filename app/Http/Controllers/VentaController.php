@@ -7,10 +7,11 @@ use App\Models\VentaDetalle;
 use App\Models\Producto;
 use App\Models\Categoria;
 use App\Models\Turno;
+use App\Models\Promocion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class VentaController extends Controller
 {
@@ -43,8 +44,9 @@ class VentaController extends Controller
 
         $categorias = Categoria::orderBy('nombre', 'asc')->get();
         $productos = Producto::with('categoria')->orderBy('nombre', 'asc')->get();
+        $promociones = Promocion::all();
 
-        return view('admin.ventas.create', compact('categorias', 'productos', 'turnoActivo'));
+        return view('admin.ventas.create', compact('categorias', 'productos', 'turnoActivo', 'promociones'));
     }
 
     /**
@@ -53,11 +55,12 @@ class VentaController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'metodo_pago'        => 'required|in:efectivo,transferencia,mixto,fiado',
-            'cliente_fiado'     => 'required_if:metodo_pago,fiado|nullable|string|max:255',
+            'metodo_pago'        => 'required|in:efectivo,transferencia,fiado',
+            'cliente_fiado'      => 'nullable|string|max:255',
             'pago_efectivo'      => 'nullable|numeric|min:0',
             'pago_transferencia' => 'nullable|numeric|min:0',
             'aplica_promocion'   => 'nullable',
+            'observaciones'      => 'nullable|string|max:500',
             'productos'          => 'required|array|min:1',
             'productos.*.id'     => 'required|exists:productos,id',
             'productos.*.cantidad' => 'required|integer|min:1',
@@ -96,11 +99,23 @@ class VentaController extends Controller
 
                 $subtotal = $producto->precio_venta * $item['cantidad'];
 
-                $nombreCategoria = strtolower($producto->categoria->nombre ?? '');
-                if ($aplicaPromo && str_contains($nombreCategoria, 'coctel') && $item['cantidad'] >= 2) {
-                    $parejas = floor($item['cantidad'] / 2);
-                    $descuento = $parejas * 4000;
-                    $subtotal -= $descuento;
+                // Prioridad 1: Buscar promoción específica del producto
+                $promocion = Promocion::where('producto_id', $producto->id)
+                                    ->where('estado', true)
+                                    ->first();
+
+                // Prioridad 2: Buscar promoción por categoría
+                if (!$promocion) {
+                    $promocion = Promocion::whereNull('producto_id')
+                                          ->where('categoria_id', $producto->categoria_id)
+                                          ->where('estado', true)
+                                          ->first();
+                }
+
+                if ($aplicaPromo && $promocion && $item['cantidad'] >= $promocion->cantidad_minima) {
+                    $grupos = floor($item['cantidad'] / $promocion->cantidad_minima);
+                    $descuentoTotal = $grupos * $promocion->descuento;
+                    $subtotal -= $descuentoTotal;
                 }
 
                 $totalVenta += $subtotal;
@@ -124,20 +139,13 @@ class VentaController extends Controller
                 $estadoPago = 'pendiente';
                 $clienteFiado = $request->cliente_fiado;
             } else if ($request->metodo_pago === 'efectivo') {
-                // CORRECCIÓN: El ingreso real a caja es estrictamente el total de la venta, 
-                // sin importar si el cliente pagó con un billete mayor (el cambio se devuelve físicamente).
                 $pagoEfectivo = $totalVenta;
             } else if ($request->metodo_pago === 'transferencia') {
-                $pagoTransferencia = $request->pago_transferencia ?? $totalVenta;
-            } else if ($request->metodo_pago === 'mixto') {
-                // En pago mixto, si especifican cuánto fue en efectivo para la cuenta, respetamos ese monto 
-                // (o el total restante si aplica), asegurando que no exceda el total de la venta.
-                $efectivoIngresado = $request->pago_efectivo ?? 0;
-                $pagoEfectivo = min($efectivoIngresado, $totalVenta);
-                $pagoTransferencia = max(0, $totalVenta - $pagoEfectivo);
+                $pagoTransferencia = $totalVenta;
+                // Guardamos el nombre limpio del remitente en la misma columna
+                $clienteFiado = $request->cliente_fiado; 
             }
 
-            // Registrar cabecera de la venta
             $venta = Venta::create([
                 'user_id'            => Auth::id(),
                 'turno_id'           => $turnoActivo->id,
@@ -151,7 +159,6 @@ class VentaController extends Controller
                 'observaciones'      => $request->observaciones,
             ]);
 
-            // Registrar detalles de los productos y actualizar el stock
             foreach ($detallesParaGuardar as $det) {
                 VentaDetalle::create([
                     'venta_id'        => $venta->id,
@@ -164,10 +171,9 @@ class VentaController extends Controller
                 $det['producto']->decrement('stock', $det['cantidad']);
             }
 
-            // Registro automático de novedad en el turno si la venta fue fiada
             if ($request->metodo_pago === 'fiado') {
                 $prodsStr = implode(', ', $resumenProductosTexto);
-                $notaFiado = "\n- [VENTA FIADA] Cliente: {$clienteFiado} | Total: $" . number_format($totalVenta, 0, ',', '.') . " | Productos entregados: {$prodsStr} (Salida de inventario sin ingreso de dinero en caja).";
+                $notaFiado = "\n- [VENTA FIADA] Cliente: {$clienteFiado} | Total: $" . number_format($totalVenta, 0, ',', '.') . " | Productos: {$prodsStr}.";
                 $turnoActivo->notas .= $notaFiado;
                 $turnoActivo->save();
             }
@@ -222,10 +228,8 @@ class VentaController extends Controller
             $monto = $venta->total;
             $metodo = $request->metodo_pago_saldo;
 
-            // Preservar el turno_id original (para que el inventario del turno de origen no se descuadre)
-            // y registrar el turno_pago_id para que el dinero ingrese a la caja del turno activo
             $venta->turno_pago_id    = $turnoActivo->id;
-            $venta->fecha_pago       = \Carbon\Carbon::now();
+            $venta->fecha_pago       = Carbon::now();
             $venta->metodo_pago_saldo = $metodo;
             $venta->estado_pago      = 'pagado';
 
@@ -239,10 +243,9 @@ class VentaController extends Controller
 
             $venta->save();
 
-            // Registro automático en las notas del turno al recibir el pago
             $clienteNombre = $venta->cliente_fiado ?? 'Cliente';
             $metodoTexto = strtoupper($metodo);
-            $notaPagoFiado = "\n- [INGRESO POR COBRO DE FIADO] Cliente: {$clienteNombre} | Monto abonado: $" . number_format($monto, 0, ',', '.') . " ({$metodoTexto}) | Dinero ingresado a caja en turno activo.";
+            $notaPagoFiado = "\n- [INGRESO FIADO] Cliente: {$clienteNombre} | Monto: $" . number_format($monto, 0, ',', '.') . " ({$metodoTexto}).";
             
             $turnoActivo->notas .= $notaPagoFiado;
             $turnoActivo->save();
@@ -271,6 +274,15 @@ class VentaController extends Controller
     }
 
     /**
+     * Genera la vista o comprobante de tique para la venta.
+     */
+    public function ticket($id)
+    {
+        $venta = Venta::with(['user', 'detalles.producto', 'turno'])->findOrFail($id);
+        return view('admin.ventas.ticket', compact('venta'));
+    }
+
+    /**
      * Elimina una venta y reestablece las cantidades al inventario (Stock).
      */
     public function destroy($id)
@@ -280,10 +292,9 @@ class VentaController extends Controller
         try {
             $venta = Venta::with(['detalles', 'turno'])->findOrFail($id);
 
-            // Blindaje: No permitir eliminar ventas de turnos que ya fueron cerrados
             if ($venta->turno && $venta->turno->estado !== 'abierto') {
                 return redirect()->route('ventas.index')
-                    ->with('mensaje', 'No puedes eliminar una venta de un turno que ya ha sido cerrado para proteger el historial contable.')
+                    ->with('mensaje', 'No puedes eliminar una venta de un turno que ya ha sido cerrado.')
                     ->with('icono', 'warning');
             }
 

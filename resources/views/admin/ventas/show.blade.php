@@ -44,9 +44,14 @@
                     </div>
                     <div class="col-md-2 col-sm-6 mb-2 mb-md-0">
                         <small class="text-muted d-block font-weight-bold text-uppercase">Cliente / Estado</small>
-                        @if($venta->cliente_fiado)
+                        @if($venta->metodo_pago === 'transferencia' && $venta->cliente_fiado)
                             <span class="text-dark font-weight-bold text-capitalize d-block mb-1">
-                                <i class="fas fa-user text-primary mr-1"></i> {{ $venta->cliente_fiado }}
+                                <i class="fas fa-user-circle text-primary mr-1"></i> {{ $venta->cliente_fiado }}
+                            </span>
+                            <span class="badge badge-primary px-2 py-1"><i class="fas fa-mobile-alt mr-1"></i> Transf. Recibida</span>
+                        @elseif($venta->metodo_pago === 'fiado' && $venta->cliente_fiado)
+                            <span class="text-dark font-weight-bold text-capitalize d-block mb-1">
+                                <i class="fas fa-user text-warning mr-1"></i> {{ $venta->cliente_fiado }}
                             </span>
                             @if($venta->estado_pago === 'pendiente')
                                 <span class="badge badge-warning px-2 py-1"><i class="fas fa-clock mr-1"></i> Deuda Pendiente</span>
