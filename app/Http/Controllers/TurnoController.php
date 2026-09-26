@@ -10,26 +10,27 @@ use App\Models\Venta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class TurnoController extends Controller
 {
     public function index()
     {
-        $turnos = Turno::with(['user', 'ventas', 'compras'])->orderBy('id', 'desc')->get();
+        $turnos = Turno::with('user')->orderBy('id', 'desc')->get();
         return view('admin.turnos.index', compact('turnos'));
     }
 
     public function create()
     {
-        $turnoActivo = Turno::where('user_id', Auth::id())
-                            ->where('estado', 'abierto')
-                            ->first();
+        // Validar que no exista NINGÚN turno abierto en todo el sistema
+        $turnoActivo = Turno::where('estado', 'abierto')->with('user')->first();
 
         if ($turnoActivo) {
+            $cajero = $turnoActivo->user->name ?? 'otro usuario';
             return redirect()->route('turnos.index')
-                ->with('mensaje', 'Ya tienes un turno activo en este momento.')
-                ->with('icono', 'info');
+                ->with('mensaje', "Ya existe una caja operando con un turno abierto (Cajero/a: {$cajero}). Solo puede haber un turno activo en el sistema.")
+                ->with('icono', 'warning');
         }
 
         $ultimoTurnoCerrado = Turno::whereIn('estado', ['cerrado_ok', 'cerrado_descuadre'])
@@ -52,15 +53,17 @@ class TurnoController extends Controller
             'notas' => 'nullable|string',
             'reporte_inventario' => 'nullable|string',
             'productos' => 'required|array',
+            'productos.*.id' => 'required|exists:productos,id',
+            'productos.*.stock_fisico' => 'required|numeric|min:0',
         ]);
 
-        $turnoActivo = Turno::where('user_id', Auth::id())
-                            ->where('estado', 'abierto')
-                            ->first();
+        // Garantizar que no exista NINGÚN turno abierto globalmente antes de permitir abrir uno nuevo
+        $turnoActivo = Turno::where('estado', 'abierto')->with('user')->first();
 
         if ($turnoActivo) {
+            $cajero = $turnoActivo->user->name ?? 'otro usuario';
             return redirect()->route('turnos.index')
-                ->with('mensaje', 'No puedes abrir otro turno porque ya tienes uno activo.')
+                ->with('mensaje', "No es posible abrir un nuevo turno: ya existe una caja operando con un turno abierto (Cajero/a: {$cajero}).")
                 ->with('icono', 'error');
         }
 
@@ -109,8 +112,12 @@ class TurnoController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('TurnoController@store - Error al abrir el turno: ' . $e->getMessage(), [
+                'user_id' => Auth::id(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
             return redirect()->back()
-                ->with('mensaje', 'Error al abrir el turno: ' . $e->getMessage())
+                ->with('mensaje', 'Ocurrió un error inesperado al abrir el turno. Por favor intente nuevamente.')
                 ->with('icono', 'error');
         }
     }
@@ -183,6 +190,12 @@ class TurnoController extends Controller
             'ventas.detalles.producto',
             'cobrosFiados'
         ])->findOrFail($id);
+
+        if ($turno->user_id !== Auth::id()) {
+            return redirect()->route('turnos.index')
+                ->with('mensaje', 'No tienes permiso para modificar un turno que no te pertenece.')
+                ->with('icono', 'error');
+        }
 
         if ($turno->estado !== 'abierto') {
             return redirect()->route('turnos.index')
@@ -276,6 +289,12 @@ class TurnoController extends Controller
             DB::beginTransaction();
 
             $turno = Turno::with(['compras', 'ventas', 'detalles', 'cobrosFiados'])->findOrFail($id);
+
+            if ($turno->user_id !== Auth::id()) {
+                return redirect()->route('turnos.index')
+                    ->with('mensaje', 'No tienes permiso para cerrar o modificar un turno que no te pertenece.')
+                    ->with('icono', 'error');
+            }
 
             foreach ($request->productos as $prod) {
                 $detalle = TurnoDetalle::where('turno_id', $turno->id)
@@ -435,8 +454,12 @@ class TurnoController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('TurnoController@update - Error al cerrar el turno: ' . $e->getMessage(), [
+                'user_id' => Auth::id(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
             return redirect()->back()
-                ->with('mensaje', 'Ocurrió un error al cerrar el turno: ' . $e->getMessage())
+                ->with('mensaje', 'Ocurrió un error inesperado al cerrar el turno. Por favor intente nuevamente.')
                 ->with('icono', 'error');
         }
     }
@@ -444,25 +467,49 @@ class TurnoController extends Controller
     public function registrarVentaOlvidada(Request $request)
     {
         $request->validate([
-            'turno_id' => 'required|exists:turnos,id',
+            'turno_id'    => 'required|exists:turnos,id',
             'producto_id' => 'required|exists:productos,id',
-            'cantidad' => 'required|integer|min:1',
-            'motivo' => 'nullable|string',
+            'cantidad'    => 'required|integer|min:1|max:999',
+            'metodo_pago' => 'required|in:efectivo,transferencia',
+            'motivo'      => 'nullable|string|max:255',
         ]);
 
         try {
             DB::beginTransaction();
 
-            $turno = Turno::findOrFail($request->turno_id);
-            $producto = Producto::findOrFail($request->producto_id);
+            $turno = Turno::where('id', $request->turno_id)
+                          ->where('estado', 'abierto')
+                          ->where('user_id', Auth::id())
+                          ->first();
+
+            if (!$turno) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No puedes registrar ventas en un turno cerrado o que no te pertenece.'
+                ], 403);
+            }
+
+            $producto = Producto::lockForUpdate()->findOrFail($request->producto_id);
+
+            if ($producto->stock < $request->cantidad) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => "El producto '{$producto->nombre}' no tiene suficiente stock disponible (Disponible: {$producto->stock})."
+                ], 400);
+            }
+
             $subtotal = $producto->precio_venta * $request->cantidad;
+
+            $metodo = $request->metodo_pago; // efectivo o transferencia
 
             $venta = new Venta();
             $venta->turno_id = $turno->id;
             $venta->user_id = Auth::id();
-            $venta->metodo_pago = 'efectivo';
+            $venta->metodo_pago = $metodo;
             $venta->estado_pago = 'pagado';
-            $venta->pago_efectivo = $subtotal;
+            $venta->pago_efectivo = ($metodo === 'efectivo') ? $subtotal : 0;
+            $venta->pago_transferencia = ($metodo === 'transferencia') ? $subtotal : 0;
             $venta->total = $subtotal;
             $venta->observaciones = $request->motivo ?? 'Venta olvidada registrada durante el cierre de turno';
             $venta->save();
@@ -517,9 +564,13 @@ class TurnoController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('TurnoController@registrarVentaOlvidada - Error: ' . $e->getMessage(), [
+                'user_id' => Auth::id(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Error al registrar la venta olvidada: ' . $e->getMessage()
+                'message' => 'Ocurrió un error inesperado al registrar la venta. Por favor intente nuevamente.'
             ], 500);
         }
     }
@@ -590,8 +641,13 @@ class TurnoController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('TurnoController@destroy - Error al eliminar el turno #' . $id . ': ' . $e->getMessage(), [
+                'user_id'  => Auth::id(),
+                'turno_id' => $id,
+                'trace'    => $e->getTraceAsString(),
+            ]);
             return redirect()->route('turnos.index')
-                ->with('mensaje', 'Ocurrió un error al intentar eliminar el turno: ' . $e->getMessage())
+                ->with('mensaje', 'Ocurrió un error inesperado al eliminar el turno. Por favor intente nuevamente.')
                 ->with('icono', 'error');
         }
     }

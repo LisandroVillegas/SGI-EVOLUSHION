@@ -33,7 +33,7 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
                     </div>
-                    <input type="text" id="inputBuscadorProducto" class="form-control" placeholder="Buscar producto por nombre...">
+                    <input type="text" id="inputBuscadorProducto" class="form-control" placeholder="Buscar producto por nombre... (F2)" autofocus>
                 </div>
             </div>
             <div class="card-body p-3" style="max-height: 65vh; overflow-y: auto;">
@@ -180,6 +180,46 @@
     .cursor-pointer { cursor: pointer; }
     .hover-shadow:hover { box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; transition: all .2s ease-in-out; }
     .select-producto-btn:active { transform: scale(0.97); }
+
+    /* ========================================================
+       AJUSTES DE ADAPTABILIDAD RESPONSIVE (MEDIA QUERIES)
+       Mantiene 100% el diseño, estructura y posiciones originales
+       ======================================================== */
+    .select-producto-btn,
+    .btn-categoria,
+    .btn-billete,
+    .btn-sumar,
+    .btn-restar {
+        touch-action: manipulation;
+    }
+
+    /* Tablets y dispositivos medianos */
+    @media (max-width: 991.98px) {
+        .card-body {
+            -webkit-overflow-scrolling: touch;
+        }
+    }
+
+    /* Teléfonos móviles */
+    @media (max-width: 767.98px) {
+        #contenedor-categorias {
+            overflow-x: auto;
+            white-space: nowrap;
+            flex-wrap: nowrap !important;
+            padding-bottom: 4px;
+            -webkit-overflow-scrolling: touch;
+        }
+        #contenedor-categorias .btn-categoria {
+            flex-shrink: 0;
+        }
+        .btn-billete {
+            flex: 1 1 auto;
+            text-align: center;
+        }
+        .table-responsive {
+            -webkit-overflow-scrolling: touch;
+        }
+    }
 </style>
 @stop
 
@@ -578,6 +618,51 @@
                 });
             }
         });
+
+        // =====================================================
+        // ATAJOS DE TECLADO DEL POS
+        // F2        → Enfocar buscador de productos
+        // Esc       → Vaciar carrito (con confirmación)
+        // Enter     → Procesar cobro si el botón está activo
+        // =====================================================
+        $(document).on('keydown', function(e) {
+            // F2 → Enfocar buscador
+            if (e.key === 'F2') {
+                e.preventDefault();
+                $('#inputBuscadorProducto').focus().select();
+            }
+
+            // Esc → Vaciar carrito (solo si no hay modal abierto)
+            if (e.key === 'Escape' && carrito.length > 0 && !$('.swal2-container').is(':visible')) {
+                e.preventDefault();
+                Swal.fire({
+                    title: '¿Vaciar detalle?',
+                    text: 'Se eliminarán todos los productos seleccionados. (Esc)',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, vaciar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        carrito = [];
+                        renderizarCarrito();
+                    }
+                });
+            }
+
+            // Enter → Disparar cobro (solo si el botón está activo y el foco NO está en un input)
+            if (e.key === 'Enter' && !$('#btnProcesarVenta').is(':disabled')) {
+                let tagName = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+                let isInput = ['input', 'textarea', 'select', 'button'].includes(tagName);
+                if (!isInput && !$('.swal2-container').is(':visible')) {
+                    e.preventDefault();
+                    $('#btnProcesarVenta').trigger('click');
+                }
+            }
+        });
+
+        // Enfocar buscador al cargar la página
+        $('#inputBuscadorProducto').trigger('focus');
     });
 </script>
 @stop

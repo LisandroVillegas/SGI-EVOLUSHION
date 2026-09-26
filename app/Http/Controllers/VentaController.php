@@ -11,6 +11,7 @@ use App\Models\Promocion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class VentaController extends Controller
@@ -44,7 +45,7 @@ class VentaController extends Controller
 
         $categorias = Categoria::orderBy('nombre', 'asc')->get();
         $productos = Producto::with('categoria')->orderBy('nombre', 'asc')->get();
-        $promociones = Promocion::all();
+        $promociones = Promocion::where('estado', true)->get();
 
         return view('admin.ventas.create', compact('categorias', 'productos', 'turnoActivo', 'promociones'));
     }
@@ -87,7 +88,7 @@ class VentaController extends Controller
             $aplicaPromo = filter_var($request->aplica_promocion, FILTER_VALIDATE_BOOLEAN);
 
             foreach ($request->productos as $item) {
-                $producto = Producto::with('categoria')->findOrFail($item['id']);
+                $producto = Producto::with('categoria')->lockForUpdate()->findOrFail($item['id']);
 
                 if ($producto->stock < $item['cantidad']) {
                     DB::rollBack();
@@ -188,9 +189,10 @@ class VentaController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Error al procesar la venta: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Ocurrió un error al procesar la venta: ' . $e->getMessage()
+                'message' => 'Ocurrió un error inesperado al procesar la venta. Por favor intente nuevamente.'
             ], 500);
         }
     }
@@ -258,8 +260,9 @@ class VentaController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Error al procesar el pago de fiado: ' . $e->getMessage());
             return redirect()->back()
-                ->with('mensaje', 'Error al procesar el pago: ' . $e->getMessage())
+                ->with('mensaje', 'Ocurrió un error inesperado al procesar el pago.')
                 ->with('icono', 'error');
         }
     }
@@ -315,8 +318,9 @@ class VentaController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Error al eliminar la venta: ' . $e->getMessage());
             return redirect()->route('ventas.index')
-                ->with('mensaje', 'Error al eliminar la venta: ' . $e->getMessage())
+                ->with('mensaje', 'Ocurrió un error inesperado al eliminar la venta.')
                 ->with('icono', 'error');
         }
     }

@@ -26,7 +26,8 @@
                     </a>
                 </div>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0 p-md-3">
+                <div class="table-responsive">
                 <table id="example1" class="table table-striped table-bordered table-hover table-sm">
                     <thead>
                         <tr>
@@ -68,17 +69,14 @@
                                 </td>
                                 <td style="text-align: center; vertical-align: middle;">
                                     <div style="display: flex; justify-content: center; align-items: center; gap: 4px;">
-                                        <!-- Botón Ver con texto -->
                                         <a href="{{ url('/admin/compras/'.$compra->id) }}" class="btn btn-info btn-sm font-weight-bold shadow-sm" title="Ver">
-                                            <i class="fas fa-eye mr-1"></i> Ver
+                                            <i class="fas fa-eye"></i><span class="btn-accion-texto ml-1"> Ver</span>
                                         </a>
-                                        
-                                        <!-- Botón Eliminar con texto protegido por PIN (.form-secured) -->
                                         <form action="{{ url('/admin/compras/'.$compra->id) }}" method="POST" class="d-inline form-secured" data-secured-message="&iquest;Desea eliminar esta compra?">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-danger btn-sm font-weight-bold shadow-sm text-white" title="Eliminar">
-                                                <i class="fas fa-trash-alt mr-1"></i> Eliminar
+                                                <i class="fas fa-trash-alt"></i><span class="btn-accion-texto ml-1"> Eliminar</span>
                                             </button>
                                         </form>
                                     </div>
@@ -87,6 +85,7 @@
                         @endforeach
                     </tbody>
                 </table>
+                </div><!-- /.table-responsive -->
             </div>
         </div>
     </div>
@@ -146,8 +145,9 @@
         box-shadow: none;
         border: none;
         display: flex;
+        flex-wrap: wrap;
         justify-content: center;
-        gap: 10px;
+        gap: 6px;
         margin-bottom: 15px;
     }
 
@@ -163,6 +163,14 @@
     .btn-info { background-color: #17a2b8; border: none; }
     .btn-warning { background-color: #ffc107; color: #212529; border: none; }
     .btn-default { background-color: #6c757d; border: none; }
+
+    /* === RESPONSIVE MÓVIL: botones de acción solo muestran ícono === */
+    @media (max-width: 575.98px) {
+        .btn-accion-texto { display: none; }
+        .btn-sm { padding: 4px 8px; }
+        #example1_wrapper .dt-buttons .btn { font-size: 12px; padding: 4px 8px; }
+        .card-header .card-tools { flex-direction: column; align-items: flex-end; gap: 4px; }
+    }
 </style>
 @stop
 
@@ -173,6 +181,7 @@
     $(function () {
         $("#example1").DataTable({
             "pageLength": 10,
+            "scrollX": true,
             "language": {
                 "emptyTable": "No hay información",
                 "info": "Mostrando _START_ a _END_ de _TOTAL_ Compras",
@@ -190,7 +199,7 @@
                     "previous": "Anterior"
                 }
             },
-            "responsive": true,
+            "responsive": false,
             "lengthChange": true,
             "autoWidth": false,
             buttons: [

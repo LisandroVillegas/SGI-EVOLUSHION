@@ -74,8 +74,9 @@ class PromocionController extends Controller
     /**
      * Actualiza la promoción en la base de datos.
      */
-    public function update(Request $request, Promocion $promocion)
+    public function update(Request $request, $id)
     {
+        $promocion = Promocion::findOrFail($id);
         $categoria = Categoria::find($request->categoria_id);
         $esNevera = $categoria && str_contains(strtolower($categoria->nombre), 'nevera');
 

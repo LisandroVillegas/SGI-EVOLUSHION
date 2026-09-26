@@ -18,6 +18,10 @@ class ReporteController extends Controller
 {
     public function index(Request $request)
     {
+        $request->validate([
+            'fecha' => 'nullable|date_format:Y-m-d'
+        ]);
+
         $fecha = $request->input('fecha', Carbon::today()->format('Y-m-d'));
         $data = $this->obtenerDatosReporte($fecha);
 
@@ -26,6 +30,10 @@ class ReporteController extends Controller
 
     public function exportarPdf(Request $request)
     {
+        $request->validate([
+            'fecha' => 'nullable|date_format:Y-m-d'
+        ]);
+
         $fecha = $request->input('fecha', Carbon::today()->format('Y-m-d'));
         $data = $this->obtenerDatosReporte($fecha);
 

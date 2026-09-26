@@ -227,9 +227,14 @@
                 </button>
             </div>
             <div class="modal-body">
+                <div class="alert alert-info py-2 px-3 mb-3 small">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Usa este formulario para registrar una venta que se realizó pero <strong>no se marcó en el POS</strong>. Descuenta stock y suma al dinero del turno.
+                </div>
                 <form id="formVentaOlvidada">
                     @csrf
                     <input type="hidden" name="turno_id" value="{{ $turno->id }}">
+
                     <div class="form-group">
                         <label for="producto_olvidado_id">Producto Vendido <span class="text-danger">*</span></label>
                         <select name="producto_id" id="producto_olvidado_id" class="form-control" required>
@@ -239,13 +244,28 @@
                             @endforeach
                         </select>
                     </div>
+
                     <div class="form-group">
                         <label for="cantidad_olvidada">Cantidad Vendida <span class="text-danger">*</span></label>
-                        <input type="number" name="cantidad" id="cantidad_olvidada" class="form-control" min="1" value="1" required>
+                        <input type="number" name="cantidad" id="cantidad_olvidada" class="form-control" min="1" max="999" value="1" required>
                     </div>
+
                     <div class="form-group">
+                        <label class="font-weight-bold">Método de Pago <span class="text-danger">*</span></label>
+                        <div class="btn-group btn-group-toggle w-100" data-toggle="buttons" id="grupo-metodo-olvidada">
+                            <label class="btn btn-outline-success active font-weight-bold">
+                                <input type="radio" name="metodo_pago" value="efectivo" checked> <i class="fas fa-money-bill-wave mr-1"></i> Efectivo
+                            </label>
+                            <label class="btn btn-outline-primary font-weight-bold">
+                                <input type="radio" name="metodo_pago" value="transferencia"> <i class="fas fa-mobile-alt mr-1"></i> Transferencia
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-0">
                         <label for="motivo_olvidado">Observación / Motivo</label>
-                        <input type="text" name="motivo" id="motivo_olvidado" class="form-control" placeholder="Ej: No se marcó en caja por afán">
+                        <input type="text" name="motivo" id="motivo_olvidado" class="form-control"
+                               placeholder="Ej: No se marcó en caja por afán" maxlength="255">
                     </div>
                 </form>
             </div>
@@ -399,6 +419,19 @@
 
         // Venta Olvidada vía AJAX
         $('#btnGuardarVentaOlvidada').click(function() {
+            // Validación mínima en cliente
+            if (!$('#producto_olvidado_id').val()) {
+                Swal.fire('Campo requerido', 'Debes seleccionar un producto.', 'warning');
+                return;
+            }
+            if (parseInt($('#cantidad_olvidada').val()) < 1) {
+                Swal.fire('Campo requerido', 'La cantidad debe ser al menos 1.', 'warning');
+                return;
+            }
+
+            let btn = $(this);
+            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...');
+
             let formData = $('#formVentaOlvidada').serialize();
             $.ajax({
                 url: "{{ route('turnos.registrarVentaOlvidada') }}",
@@ -407,13 +440,36 @@
                 success: function(res) {
                     if (res.success) {
                         $('#modalVentaOlvidada').modal('hide');
-                        location.reload();
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Venta registrada!',
+                            html: '<strong>' + res.cantidad + 'x ' + res.producto_nombre + '</strong><br>Subtotal: <strong>$' + new Intl.NumberFormat('es-CO').format(res.subtotal) + '</strong>',
+                            confirmButtonText: 'Aceptar'
+                        }).then(function() {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('No se pudo registrar', res.message || 'Error inesperado al guardar la venta.', 'error');
+                        btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Guardar Venta');
                     }
                 },
-                error: function(err) {
-                    alert('Ocurrió un error al guardar la venta olvidada.');
+                error: function(xhr) {
+                    let msg = 'Ocurrió un error inesperado. Intente nuevamente.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    Swal.fire('Error del servidor', msg, 'error');
+                    btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Guardar Venta');
                 }
             });
+        });
+
+        // Limpiar el form del modal al cerrarse
+        $('#modalVentaOlvidada').on('hidden.bs.modal', function() {
+            $('#formVentaOlvidada')[0].reset();
+            // Restaurar estado del selector de método de pago
+            $('#grupo-metodo-olvidada label').removeClass('active');
+            $('#grupo-metodo-olvidada label:first').addClass('active');
         });
 
         // Inicializar cálculos
