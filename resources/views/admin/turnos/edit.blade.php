@@ -21,7 +21,7 @@
         <div class="col-lg-4 col-md-5">
             <div class="card card-outline card-warning shadow-sm">
                 <div class="card-header bg-light">
-                    <h3 class="card-title font-weight-bold"><i class="fas fa-cash-register mr-1 text-warning"></i> Arqueo de Caja</h3>
+                    <h3 class="card-title font-weight-bold text-dark"><i class="fas fa-cash-register mr-1 text-warning"></i> Arqueo de Caja</h3>
                 </div>
                 <div class="card-body">
                     <button type="button" class="btn btn-primary btn-block mb-3 font-weight-bold shadow-sm" data-toggle="modal" data-target="#modalVentaOlvidada">
@@ -76,7 +76,7 @@
                         </div>
                     </div>
 
-                    {{-- Campo de Base para el Siguiente Turno (Inicializa en 0) --}}
+                    {{-- Campo de Base para el Siguiente Turno (Sin decimales) --}}
                     <div class="form-group mb-3">
                         <label for="base_siguiente_turno" class="font-weight-bold text-dark mb-1">
                             <i class="fas fa-wallet text-primary mr-1"></i> (-) Base para el Siguiente Turno
@@ -131,18 +131,18 @@
                         <div class="card-body p-2">
                             <div class="tab-content" id="tabs-reporte-content">
                                 <div class="tab-pane fade show active" id="content-cierre" role="tabpanel">
-                                    <textarea name="reporte_descuadre_cierre" id="reporte_descuadre_cierre" rows="5" 
+                                    <textarea name="reporte_descuadre_cierre" id="reporte_descuadre_cierre" rows="6" 
                                               class="form-control form-control-sm bg-light" readonly style="resize: none; font-size: 9pt;"></textarea>
                                 </div>
                                 <div class="tab-pane fade" id="content-apertura" role="tabpanel">
-                                    <textarea class="form-control form-control-sm bg-light" rows="5" readonly style="resize: none; font-size: 9pt;">{{ $turno->notas ?? 'Sin novedades al abrir.' }}</textarea>
+                                    <textarea class="form-control form-control-sm bg-light" rows="6" readonly style="resize: none; font-size: 9pt;">{{ $turno->notas ?? 'Sin novedades al abrir.' }}</textarea>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="form-group mt-3 mb-0">
-                        <label for="notas_cajero" class="small font-weight-bold"><i class="fas fa-pen mr-1"></i> Observaciones del Cierre:</label>
+                        <label for="notas_cajero" class="small font-weight-bold text-dark"><i class="fas fa-pen mr-1"></i> Observaciones Adicionales del Cierre:</label>
                         <textarea name="notas_cajero" id="notas_cajero" rows="2" class="form-control form-control-sm" 
                                   placeholder="Escribe notas adicionales sobre dinero o novedades..."></textarea>
                     </div>
@@ -150,43 +150,48 @@
             </div>
         </div>
 
-        {{-- COLUMNA DERECHA: CONTEO DE PRODUCTOS --}}
+        {{-- COLUMNA DERECHA: CONTEO DE PRODUCTOS (Estilo Calcado de Apertura) --}}
         <div class="col-lg-8 col-md-7">
-            <div class="card card-outline card-primary shadow-sm">
-                <div class="card-header bg-light">
-                    <h3 class="card-title font-weight-bold"><i class="fas fa-boxes mr-1 text-primary"></i> Conteo de Inventario Final</h3>
+            <div class="card card-outline card-primary shadow-sm border rounded">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h3 class="card-title font-weight-bold text-dark m-0">
+                        <i class="fas fa-boxes mr-2 text-primary"></i>Conteo de Inventario Final
+                    </h3>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover table-sm m-0">
-                            <thead class="thead-dark small">
-                                <tr>
-                                    <th>Producto</th>
-                                    <th class="text-center">Stock Inicial</th>
-                                    <th class="text-center">Esperado</th>
-                                    <th class="text-center" style="width: 160px;">Conteo Físico</th>
-                                    <th class="text-center">Estado</th>
+                        <table class="table table-hover table-striped table-valign-middle m-0">
+                            <thead class="bg-light text-muted border-bottom">
+                                <tr class="small text-uppercase font-weight-bold">
+                                    <th class="py-3 pl-3">Producto / Insumo</th>
+                                    <th class="text-center py-3">Stock Inicial</th>
+                                    <th class="text-center py-3">Esperado</th>
+                                    <th class="text-center py-3" style="width: 170px;">Conteo Físico Real</th>
+                                    <th class="text-center py-3">Estado</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($turno->detalles as $index => $detalle)
                                     <tr>
-                                        <td class="align-middle font-weight-bold small">
+                                        <td class="align-middle pl-3 font-weight-bold text-dark">
                                             {{ $detalle->producto->nombre }}
                                             <input type="hidden" name="productos[{{ $index }}][id]" value="{{ $detalle->producto_id }}">
                                         </td>
-                                        <td class="text-center align-middle small">{{ $detalle->stock_fisico_apertura }}</td>
-                                        <td class="text-center align-middle font-weight-bold text-primary small" id="esperado_{{ $detalle->producto_id }}">
-                                            {{ $detalle->stock_esperado_calculado }}
+                                        <td class="text-center align-middle font-weight-normal text-muted">{{ $detalle->stock_fisico_apertura }}</td>
+                                        {{-- Stock Esperado idéntico a Apertura --}}
+                                        <td class="text-center align-middle" id="esperado_{{ $detalle->producto_id }}">
+                                            <span class="border rounded px-2 py-1 bg-white font-weight-bold text-dark" style="font-size: 0.9rem;">
+                                                {{ $detalle->stock_esperado_calculado }}
+                                            </span>
                                         </td>
                                         <td class="text-center align-middle">
-                                            <div class="input-group input-group-sm">
+                                            <div class="input-group input-group-sm mx-auto" style="max-width: 130px;">
                                                 <div class="input-group-prepend">
                                                     <button type="button" class="btn btn-outline-secondary btn-restar" data-id="{{ $detalle->producto_id }}"><i class="fas fa-minus"></i></button>
                                                 </div>
                                                 <input type="number" min="0" name="productos[{{ $index }}][stock_fisico]" 
                                                        id="input_stock_{{ $detalle->producto_id }}" 
-                                                       class="form-control text-center font-weight-bold input-stock-fisico" 
+                                                       class="form-control text-center font-weight-bold input-stock-fisico border-secondary" 
                                                        value="{{ old('productos.'.$index.'.stock_fisico', $detalle->stock_esperado_calculado) }}" 
                                                        data-id="{{ $detalle->producto_id }}"
                                                        data-esperado="{{ $detalle->stock_esperado_calculado }}"
@@ -197,7 +202,7 @@
                                             </div>
                                         </td>
                                         <td class="text-center align-middle" id="badge_estado_{{ $detalle->producto_id }}">
-                                            <span class="badge badge-success px-2 py-1">0</span>
+                                            <span class="badge badge-success px-2 py-1 font-weight-bold">0</span>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -205,9 +210,12 @@
                         </table>
                     </div>
                 </div>
-                <div class="card-footer bg-light text-right">
-                    <a href="{{ route('turnos.index') }}" class="btn btn-secondary mr-2">Cancelar</a>
-                    <button type="submit" class="btn btn-warning font-weight-bold shadow-sm">
+                {{-- Pie de página con Botón Cancelar Gris Claro Nítido --}}
+                <div class="card-footer bg-light text-right py-3 border-top">
+                    <a href="{{ route('turnos.index') }}" class="btn btn-secondary text-white font-weight-bold mr-2 px-4 shadow-sm">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-warning font-weight-bold shadow-sm px-4">
                         <i class="fas fa-lock mr-1"></i> Finalizar y Cerrar Turno
                     </button>
                 </div>
@@ -240,7 +248,11 @@
                         <select name="producto_id" id="producto_olvidado_id" class="form-control" required>
                             <option value="">Seleccione un producto...</option>
                             @foreach($turno->detalles as $det)
-                                <option value="{{ $det->producto_id }}">{{ $det->producto->nombre }}</option>
+                                <option value="{{ $det->producto_id }}" 
+                                        data-precio="{{ $det->producto->precio_venta }}"
+                                        data-categoria="{{ $det->producto->categoria_id }}">
+                                    {{ $det->producto->nombre }} (${{ number_format($det->producto->precio_venta, 0, ',', '.') }})
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -248,6 +260,28 @@
                     <div class="form-group">
                         <label for="cantidad_olvidada">Cantidad Vendida <span class="text-danger">*</span></label>
                         <input type="number" name="cantidad" id="cantidad_olvidada" class="form-control" min="1" max="999" value="1" required>
+                    </div>
+
+                    {{-- Switch de Promoción --}}
+                    <div class="form-group mb-3 bg-white p-2 border rounded">
+                        <div class="custom-control custom-switch custom-switch-off-danger custom-switch-on-success">
+                            <input type="checkbox" class="custom-control-input" id="switchPromocionOlvidada" name="aplica_promocion" value="1">
+                            <label class="custom-control-label font-weight-bold text-dark cursor-pointer" for="switchPromocionOlvidada">
+                                <i class="fas fa-tags text-warning mr-1"></i> Aplicar Promociones
+                            </label>
+                        </div>
+                    </div>
+
+                    {{-- Cuadro de Resumen de Totales y Descuento --}}
+                    <div class="bg-light rounded border p-2 mb-3">
+                        <div class="d-flex justify-content-between align-items-center small text-muted mb-1" id="box-descuento-olvidada" style="display: none !important;">
+                            <span>Descuento Promocional:</span>
+                            <span class="font-weight-bold text-danger" id="texto-descuento-olvidada">-$0</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="h6 font-weight-bold m-0 text-muted">TOTAL A COBRAR:</span>
+                            <span class="h4 font-weight-bold m-0 text-success" id="texto-total-olvidada">$0</span>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -282,12 +316,15 @@
 
 @section('js')
 <script>
+    const promocionesRegistradas = @json(\App\Models\Promocion::where('estado', true)->get());
+
     $(document).ready(function() {
         let baseInicial = {{ $turno->base_caja }};
         let totalVentas = {{ $totalVentasEfectivo }};
         let totalCompras = {{ $totalCompras }};
         let totalFiadoCobrado = {{ $totalFiadoCobrado }};
         let egresosTexto = @json($detalleEgresosTexto ?? []);
+        let notasTurno = @json($turno->notas ?? '');
 
         function recalcularFinanzas() {
             let pagoTrabajadora = parseFloat($('#pago_trabajadora').val()) || 0;
@@ -373,15 +410,62 @@
                 lineasReporte.push("- Sin novedades de inventario ni egresos.");
             }
 
+            if (notasTurno && notasTurno.trim() !== '') {
+                lineasReporte.push("\nREGISTROS Y NOVEDADES DEL TURNO:");
+                lineasReporte.push(notasTurno.trim());
+            }
+
             $('#reporte_descuadre_cierre').val(lineasReporte.join("\n"));
         }
 
-        // Eventos de cambios financieros
+        function calcularModalOlvidada() {
+            let select = $('#producto_olvidado_id option:selected');
+            let productoId = parseInt($('#producto_olvidado_id').val());
+            let categoriaId = parseInt(select.data('categoria'));
+            let precio = parseFloat(select.data('precio')) || 0;
+            let cantidad = parseInt($('#cantidad_olvidada').val()) || 1;
+
+            if (!productoId || precio <= 0) {
+                $('#box-descuento-olvidada').attr('style', 'display: none !important;');
+                $('#texto-total-olvidada').text('$0');
+                return;
+            }
+
+            let subtotal = precio * cantidad;
+            let descuentoTotal = 0;
+
+            if ($('#switchPromocionOlvidada').is(':checked')) {
+                let promo = promocionesRegistradas.find(p => p.producto_id == productoId);
+
+                if (!promo && categoriaId) {
+                    promo = promocionesRegistradas.find(p => !p.producto_id && p.categoria_id == categoriaId);
+                }
+
+                if (promo && cantidad >= promo.cantidad_minima && promo.cantidad_minima > 0) {
+                    let veces = Math.floor(cantidad / promo.cantidad_minima);
+                    descuentoTotal = veces * parseFloat(promo.descuento);
+                }
+            }
+
+            if (descuentoTotal > 0) {
+                $('#texto-descuento-olvidada').text('-$' + descuentoTotal.toLocaleString('es-CO'));
+                $('#box-descuento-olvidada').removeAttr('style');
+            } else {
+                $('#box-descuento-olvidada').attr('style', 'display: none !important;');
+            }
+
+            let totalFinal = Math.max(0, subtotal - descuentoTotal);
+            $('#texto-total-olvidada').text('$' + totalFinal.toLocaleString('es-CO'));
+        }
+
+        $('#producto_olvidado_id, #cantidad_olvidada, #switchPromocionOlvidada').on('change keyup input', function() {
+            calcularModalOlvidada();
+        });
+
         $('#pago_trabajadora, #base_siguiente_turno, #total_efectivo_real').on('input change', function() {
             recalcularFinanzas();
         });
 
-        // Eventos de cambios en stock físico
         $('.input-stock-fisico').on('input change', function() {
             let id = $(this).data('id');
             let esperado = parseInt($(this).data('esperado')) || 0;
@@ -390,17 +474,16 @@
 
             let badgeCell = $('#badge_estado_' + id);
             if (dif === 0) {
-                badgeCell.html('<span class="badge badge-success px-2 py-1">0</span>');
+                badgeCell.html('<span class="badge badge-success px-2 py-1 font-weight-bold">0</span>');
             } else if (dif < 0) {
-                badgeCell.html('<span class="badge badge-danger px-2 py-1">' + dif + '</span>');
+                badgeCell.html('<span class="badge badge-danger px-2 py-1 font-weight-bold">' + dif + '</span>');
             } else {
-                badgeCell.html('<span class="badge badge-info px-2 py-1">+' + dif + '</span>');
+                badgeCell.html('<span class="badge badge-info px-2 py-1 font-weight-bold">+' + dif + '</span>');
             }
 
             generarReporteUnificado();
         });
 
-        // Botones mas y menos para conteo rapido
         $('.btn-restar').click(function() {
             let id = $(this).data('id');
             let input = $('#input_stock_' + id);
@@ -417,9 +500,7 @@
             input.val(val + 1).trigger('change');
         });
 
-        // Venta Olvidada vía AJAX
         $('#btnGuardarVentaOlvidada').click(function() {
-            // Validación mínima en cliente
             if (!$('#producto_olvidado_id').val()) {
                 Swal.fire('Campo requerido', 'Debes seleccionar un producto.', 'warning');
                 return;
@@ -443,7 +524,7 @@
                         Swal.fire({
                             icon: 'success',
                             title: '¡Venta registrada!',
-                            html: '<strong>' + res.cantidad + 'x ' + res.producto_nombre + '</strong><br>Subtotal: <strong>$' + new Intl.NumberFormat('es-CO').format(res.subtotal) + '</strong>',
+                            html: '<strong>' + res.cantidad + 'x ' + res.producto_nombre + '</strong><br>Total: <strong>$' + new Intl.NumberFormat('es-CO').format(res.subtotal) + '</strong>',
                             confirmButtonText: 'Aceptar'
                         }).then(function() {
                             location.reload();
@@ -464,16 +545,16 @@
             });
         });
 
-        // Limpiar el form del modal al cerrarse
         $('#modalVentaOlvidada').on('hidden.bs.modal', function() {
             $('#formVentaOlvidada')[0].reset();
-            // Restaurar estado del selector de método de pago
+            $('#box-descuento-olvidada').hide();
+            $('#texto-total-olvidada').text('$0');
             $('#grupo-metodo-olvidada label').removeClass('active');
             $('#grupo-metodo-olvidada label:first').addClass('active');
         });
 
-        // Inicializar cálculos
         recalcularFinanzas();
+        calcularModalOlvidada();
     });
 </script>
 @stop

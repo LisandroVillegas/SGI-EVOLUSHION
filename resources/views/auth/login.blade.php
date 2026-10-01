@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-width=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión - Evolushion SGI</title>
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -10,10 +10,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            /* Aquí puedes cambiar el color primario si quieres que coincida exactamente con un color de tu logo */
             --primary: #2b2b2b; 
             --primary-hover: #1a1a1a;
-            --accent: #d4af37; /* Un tono dorado sutil por defecto, reemplazable */
+            --accent: #d4af37;
             --secondary: #858796;
             --dark: #2d2d2d;
             --light: #f4f6f9;
@@ -61,7 +60,6 @@
             overflow: hidden;
         }
 
-        /* Patrón sutil de fondo para la zona del logo */
         .login-branding::before {
             content: '';
             position: absolute;
@@ -81,7 +79,7 @@
             margin-bottom: 25px;
             position: relative;
             z-index: 1;
-            background-color: #fff; /* Por si el logo tiene transparencias */
+            background-color: #fff;
         }
 
         .login-branding h1 {
@@ -212,18 +210,28 @@
             border-color: #e74a3b !important;
         }
 
-        .forgot-password {
-            display: block;
-            text-align: center;
+        .auth-links {
             margin-top: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .forgot-password, .register-link {
             color: var(--secondary);
             text-decoration: none;
             font-size: 0.9rem;
             transition: color 0.3s;
         }
 
-        .forgot-password:hover {
+        .register-link {
+            font-weight: 600;
             color: var(--primary);
+        }
+
+        .forgot-password:hover, .register-link:hover {
+            color: var(--primary-hover);
             text-decoration: underline;
         }
 
@@ -298,11 +306,19 @@
                     <i class="fas fa-sign-in-alt"></i> Entrar al Sistema
                 </button>
 
-                @if (Route::has('password.request'))
-                    <a class="forgot-password" href="{{ route('password.request') }}">
-                        ¿Olvidaste tu contraseña? Haz clic aquí
-                    </a>
-                @endif
+                <div class="auth-links">
+                    @if (Route::has('register'))
+                        <a class="register-link" href="{{ route('register') }}">
+                            ¿No tienes cuenta? Regístrate aquí
+                        </a>
+                    @endif
+
+                    @if (Route::has('password.request'))
+                        <a class="forgot-password" href="{{ route('password.request') }}">
+                            ¿Olvidaste tu contraseña? Haz clic aquí
+                        </a>
+                    @endif
+                </div>
             </form>
         </div>
     </div>

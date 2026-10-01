@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\VentaDetalle;
+use App\Models\Promocion; //
 use App\Models\Turno;
 use App\Models\Producto;
 use App\Models\TurnoDetalle;
@@ -467,11 +468,12 @@ class TurnoController extends Controller
     public function registrarVentaOlvidada(Request $request)
     {
         $request->validate([
-            'turno_id'    => 'required|exists:turnos,id',
-            'producto_id' => 'required|exists:productos,id',
-            'cantidad'    => 'required|integer|min:1|max:999',
-            'metodo_pago' => 'required|in:efectivo,transferencia',
-            'motivo'      => 'nullable|string|max:255',
+            'turno_id'         => 'required|exists:turnos,id',
+            'producto_id'      => 'required|exists:productos,id',
+            'cantidad'         => 'required|integer|min:1|max:999',
+            'metodo_pago'      => 'required|in:efectivo,transferencia',
+            'motivo'           => 'nullable|string|max:255',
+            'aplica_promocion' => 'nullable',
         ]);
 
         try {
@@ -489,7 +491,7 @@ class TurnoController extends Controller
                 ], 403);
             }
 
-            $producto = Producto::lockForUpdate()->findOrFail($request->producto_id);
+            $producto = Producto::with('categoria')->lockForUpdate()->findOrFail($request->producto_id);
 
             if ($producto->stock < $request->cantidad) {
                 DB::rollBack();
@@ -499,15 +501,38 @@ class TurnoController extends Controller
                 ], 400);
             }
 
+            // Lógica de Promoción
+            $aplicaPromo = filter_var($request->aplica_promocion, FILTER_VALIDATE_BOOLEAN);
             $subtotal = $producto->precio_venta * $request->cantidad;
+            $descuentoTotal = 0;
 
-            $metodo = $request->metodo_pago; // efectivo o transferencia
+            // Prioridad 1: Buscar promoción específica del producto
+            $promocion = Promocion::where('producto_id', $producto->id)
+                                  ->where('estado', true)
+                                  ->first();
+
+            // Prioridad 2: Buscar promoción por categoría
+            if (!$promocion) {
+                $promocion = Promocion::whereNull('producto_id')
+                                      ->where('categoria_id', $producto->categoria_id)
+                                      ->where('estado', true)
+                                      ->first();
+            }
+
+            if ($aplicaPromo && $promocion && $request->cantidad >= $promocion->cantidad_minima) {
+                $grupos = floor($request->cantidad / $promocion->cantidad_minima);
+                $descuentoTotal = $grupos * $promocion->descuento;
+                $subtotal -= $descuentoTotal;
+            }
+
+            $metodo = $request->metodo_pago;
 
             $venta = new Venta();
             $venta->turno_id = $turno->id;
             $venta->user_id = Auth::id();
             $venta->metodo_pago = $metodo;
             $venta->estado_pago = 'pagado';
+            $venta->aplica_promocion = $aplicaPromo ? 1 : 0;
             $venta->pago_efectivo = ($metodo === 'efectivo') ? $subtotal : 0;
             $venta->pago_transferencia = ($metodo === 'transferencia') ? $subtotal : 0;
             $venta->total = $subtotal;
@@ -515,14 +540,24 @@ class TurnoController extends Controller
             $venta->save();
 
             VentaDetalle::create([
-                'venta_id' => $venta->id,
-                'producto_id' => $producto->id,
-                'cantidad' => $request->cantidad,
+                'venta_id'        => $venta->id,
+                'producto_id'     => $producto->id,
+                'cantidad'        => $request->cantidad,
                 'precio_unitario' => $producto->precio_venta,
-                'subtotal' => $subtotal,
+                'subtotal'        => $subtotal,
             ]);
 
             $producto->decrement('stock', $request->cantidad);
+
+            // Anexar automáticamente a las notas/observaciones del turno
+            $detallePromo = ($aplicaPromo && $descuentoTotal > 0) ? " (Promo Aplicada: -$" . number_format($descuentoTotal, 0, ',', '.') . ")" : "";
+            $motivoTexto = $request->motivo ? " | Motivo: {$request->motivo}" : "";
+            $lineaObservacion = "\n- [VENTA OLVIDADA] " . $request->cantidad . "x " . $producto->nombre . 
+                                $detallePromo . " | Total: $" . number_format($subtotal, 0, ',', '.') . 
+                                " (" . ucfirst($metodo) . ")" . $motivoTexto;
+
+            $turno->notas = trim(($turno->notas ?? '') . " " . $lineaObservacion);
+            $turno->save();
 
             $detalleTurno = TurnoDetalle::where('turno_id', $turno->id)
                 ->where('producto_id', $producto->id)
@@ -553,16 +588,16 @@ class TurnoController extends Controller
             DB::commit();
 
             return response()->json([
-                'success' => true,
-                'message' => 'Venta olvidada registrada y dinero/stock actualizados.',
-                'subtotal' => $subtotal,
-                'producto_id' => $producto->id,
-                'producto_nombre' => $producto->nombre,
-                'cantidad' => $request->cantidad,
+                'success'              => true,
+                'message'              => 'Venta olvidada registrada y dinero/stock actualizados.',
+                'subtotal'             => $subtotal,
+                'producto_id'          => $producto->id,
+                'producto_nombre'      => $producto->nombre,
+                'cantidad'             => $request->cantidad,
                 'nuevo_stock_esperado' => $nuevoStockEsperado
             ]);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) { // <--- Cambiado a Throwable para capturar cualquier fallo
             DB::rollBack();
             Log::error('TurnoController@registrarVentaOlvidada - Error: ' . $e->getMessage(), [
                 'user_id' => Auth::id(),
@@ -570,11 +605,10 @@ class TurnoController extends Controller
             ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Ocurrió un error inesperado al registrar la venta. Por favor intente nuevamente.'
+                'message' => 'Error en el servidor: ' . $e->getMessage()
             ], 500);
         }
     }
-
     public function destroy($id)
     {
         try {

@@ -16,7 +16,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Auth::routes(['register' => false]);
+Auth::routes();
 
 // Panel Principal
 Route::get('/home', [AdminController::class, 'index'])->name('home')->middleware('auth');
