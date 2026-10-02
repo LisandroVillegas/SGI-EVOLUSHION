@@ -52,7 +52,7 @@
                             <option value="">-- Selecciona un Producto --</option>
                             @foreach ($productos as $prod)
                                 <option value="{{ $prod->id }}" data-categoria="{{ $prod->categoria_id }}" class="opcion-producto" {{ old('producto_id') == $prod->id ? 'selected' : '' }}>
-                                    {{ $prod->nombre }}
+                                    {{ $prod->nombre }} ({{ $prod->categoria->nombre ?? 'Sin Categoría' }})
                                 </option>
                             @endforeach
                         </select>

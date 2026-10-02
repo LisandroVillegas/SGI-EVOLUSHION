@@ -129,7 +129,7 @@
                                 <tr>
                                     <td class="text-center align-middle font-weight-bold text-muted">{{ $loop_index + 1 }}</td>
                                     <td class="align-middle">
-                                        <strong class="text-dark">{{ $detalle->producto->nombre ?? 'Producto no encontrado / Eliminado' }}</strong>
+                                        <strong class="text-dark">{{ $detalle->producto ? $detalle->producto->nombre . ' (' . ($detalle->producto->categoria->nombre ?? 'Sin Categoría') . ')' : 'Producto no encontrado / Eliminado' }}</strong>
                                     </td>
                                     <td class="text-center align-middle">${{ number_format($precio, 0, ',', '.') }}</td>
                                     <td class="text-center align-middle">

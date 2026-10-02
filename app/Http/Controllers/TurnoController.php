@@ -42,7 +42,7 @@ class TurnoController extends Controller
                         ? $ultimoTurnoCerrado->base_siguiente_turno
                         : ($ultimoTurnoCerrado->base_caja ?? 50000);
 
-        $productos = Producto::orderBy('nombre', 'asc')->get();
+        $productos = Producto::with('categoria')->orderBy('nombre', 'asc')->get();
 
         return view('admin.turnos.create', compact('productos', 'baseSugerida'));
     }
@@ -185,7 +185,7 @@ class TurnoController extends Controller
     public function edit($id)
     {
         $turno = Turno::with([
-            'detalles.producto',
+            'detalles.producto.categoria',
             'user',
             'compras.detalles.producto',
             'ventas.detalles.producto',

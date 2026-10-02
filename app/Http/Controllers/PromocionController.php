@@ -24,7 +24,7 @@ class PromocionController extends Controller
     public function create()
     {
         $categorias = Categoria::orderBy('nombre', 'asc')->get();
-        $productos  = Producto::orderBy('nombre', 'asc')->get();
+        $productos  = Producto::with('categoria')->orderBy('nombre', 'asc')->get();
         
         return view('admin.promociones.create', compact('categorias', 'productos'));
     }
@@ -66,7 +66,7 @@ class PromocionController extends Controller
     {
         $promocion  = Promocion::findOrFail($id);
         $categorias = Categoria::orderBy('nombre', 'asc')->get();
-        $productos  = Producto::orderBy('nombre', 'asc')->get();
+        $productos  = Producto::with('categoria')->orderBy('nombre', 'asc')->get();
 
         return view('admin.promociones.edit', compact('promocion', 'categorias', 'productos'));
     }

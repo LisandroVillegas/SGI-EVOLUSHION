@@ -93,12 +93,17 @@ class CategoriaController extends Controller
      */
     public function destroy($id)
     {
-        $categoria = Categoria::findOrFail($id);
-        $categoria->delete();
+        try {
+            $categoria = Categoria::findOrFail($id);
+            $categoria->delete();
 
-        return redirect()->route('categoria.index')
-        ->with('mensaje','Categoria eliminada correctamente')
-        ->with('icono','success');
-      
+            return redirect()->route('categoria.index')
+            ->with('mensaje','Categoria eliminada correctamente')
+            ->with('icono','success');
+        } catch (\Illuminate\Database\QueryException $e) {
+            return redirect()->route('categoria.index')
+            ->with('mensaje', 'No se puede eliminar esta categoría porque tiene registros relacionados (productos asociados).')
+            ->with('icono', 'error');
+        }
     }
 }

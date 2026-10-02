@@ -272,7 +272,7 @@ class VentaController extends Controller
      */
     public function show($id)
     {
-        $venta = Venta::with(['user', 'detalles.producto'])->findOrFail($id);
+        $venta = Venta::with(['user', 'detalles.producto.categoria'])->findOrFail($id);
         return view('admin.ventas.show', compact('venta'));
     }
 
@@ -281,7 +281,7 @@ class VentaController extends Controller
      */
     public function ticket($id)
     {
-        $venta = Venta::with(['user', 'detalles.producto', 'turno'])->findOrFail($id);
+        $venta = Venta::with(['user', 'detalles.producto.categoria', 'turno'])->findOrFail($id);
         return view('admin.ventas.ticket', compact('venta'));
     }
 

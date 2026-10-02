@@ -51,7 +51,7 @@
                                         <select name="productos[0][producto_id]" class="form-control" required>
                                             <option value="">-- Seleccionar Producto --</option>
                                             @foreach($productos as $prod)
-                                                <option value="{{ $prod->id }}">{{ $prod->nombre }} (Stock actual: {{ $prod->stock }})</option>
+                                                <option value="{{ $prod->id }}">{{ $prod->nombre }} ({{ $prod->categoria->nombre ?? 'Sin Categoría' }}) (Stock actual: {{ $prod->stock }})</option>
                                             @endforeach
                                         </select>
                                     </td>

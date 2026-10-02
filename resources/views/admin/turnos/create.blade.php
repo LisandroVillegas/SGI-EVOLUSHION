@@ -92,7 +92,7 @@
                                 @foreach($productos as $producto)
                                     <tr class="fila-conteo">
                                         <td class="align-middle pl-3 font-weight-bold text-dark">
-                                            <strong class="text-dark d-block">{{ $producto->nombre }}</strong>
+                                            <strong class="text-dark d-block">{{ $producto->nombre }} ({{ $producto->categoria->nombre ?? 'Sin Categoría' }})</strong>
                                             <input type="hidden" name="productos[{{ $loop->index }}][id]" value="{{ $producto->id }}">
                                             <input type="hidden" name="productos[{{ $loop->index }}][stock_sistema]" value="{{ $producto->stock }}">
                                         </td>

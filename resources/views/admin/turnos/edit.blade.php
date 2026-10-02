@@ -174,7 +174,7 @@
                                 @foreach($turno->detalles as $index => $detalle)
                                     <tr>
                                         <td class="align-middle pl-3 font-weight-bold text-dark">
-                                            {{ $detalle->producto->nombre }}
+                                            {{ $detalle->producto ? $detalle->producto->nombre . ' (' . ($detalle->producto->categoria->nombre ?? 'Sin Categoría') . ')' : 'Producto no encontrado' }}
                                             <input type="hidden" name="productos[{{ $index }}][id]" value="{{ $detalle->producto_id }}">
                                         </td>
                                         <td class="text-center align-middle font-weight-normal text-muted">{{ $detalle->stock_fisico_apertura }}</td>
@@ -251,7 +251,7 @@
                                 <option value="{{ $det->producto_id }}" 
                                         data-precio="{{ $det->producto->precio_venta }}"
                                         data-categoria="{{ $det->producto->categoria_id }}">
-                                    {{ $det->producto->nombre }} (${{ number_format($det->producto->precio_venta, 0, ',', '.') }})
+                                    {{ $det->producto->nombre }} ({{ $det->producto->categoria->nombre ?? 'Sin Categoría' }}) (${{ number_format($det->producto->precio_venta, 0, ',', '.') }})
                                 </option>
                             @endforeach
                         </select>

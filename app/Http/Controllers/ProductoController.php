@@ -99,14 +99,21 @@ class ProductoController extends Controller
 
     public function destroy($id)
     {
-        $producto = Producto::findOrFail($id);
-        if ($producto->imagen && Storage::disk('public')->exists($producto->imagen)) {
-            Storage::disk('public')->delete($producto->imagen);
-        }
-        $producto->delete();
+        try {
+            $producto = Producto::findOrFail($id);
+            $producto->delete();
+            
+            if ($producto->imagen && Storage::disk('public')->exists($producto->imagen)) {
+                Storage::disk('public')->delete($producto->imagen);
+            }
 
-        return redirect()->route('producto.index')
-            ->with('mensaje', 'Producto eliminado exitosamente')
-            ->with('icono', 'success');
+            return redirect()->route('producto.index')
+                ->with('mensaje', 'Producto eliminado exitosamente')
+                ->with('icono', 'success');
+        } catch (\Illuminate\Database\QueryException $e) {
+            return redirect()->route('producto.index')
+                ->with('mensaje', 'No se puede eliminar este producto porque tiene registros relacionados (ventas, compras o promociones asociadas).')
+                ->with('icono', 'error');
+        }
     }
 }

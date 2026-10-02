@@ -20,7 +20,7 @@ class CompraController extends Controller
 
     public function create()
     {
-        $productos = Producto::all();
+        $productos = Producto::with('categoria')->get();
         return view('admin.compras.create', compact('productos'));
     }
 
