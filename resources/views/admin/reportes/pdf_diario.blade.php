@@ -29,50 +29,51 @@
         .badge-success { background-color: #d1f2e1; color: #0f5132; }
         .badge-primary { background-color: #cff4fc; color: #055160; }
         .badge-danger { background-color: #f8d7da; color: #842029; }
-        .badge-warning { background-color: #fff3cd; color: #856404; }
-        .badge-secondary { background-color: #e2e3e5; color: #383d41; }
+        .badge-warning { background-color: #FEF08A; color: #713F12; border: 1px solid #FDE047; font-weight: 700; }
+        .badge-secondary { background-color: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; }
 
         /* Cuadro Resumen de Totales */
         .kpi-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
-        .kpi-table td { width: 25%; padding: 8px 10px; border: 1px solid #dee2e6; text-align: center; border-radius: 4px; }
-        .kpi-title { font-size: 9px; text-transform: uppercase; font-weight: bold; color: #6c757d; margin-bottom: 3px; display: block; }
-        .kpi-val { font-size: 15px; font-weight: bold; }
+        .kpi-table td { width: 25%; padding: 10px; border: 1px solid #E2E8F0; text-align: center; border-radius: 4px; }
+        .kpi-title { font-size: 9px; text-transform: uppercase; font-weight: bold; color: #64748B; margin-bottom: 4px; display: block; letter-spacing: 0.5px; }
+        .kpi-val { font-size: 16px; font-weight: 800; }
         
         /* Section Titles */
         .section-title { 
-            background-color: #2d3748; 
-            color: #fff; 
-            padding: 6px 10px; 
+            background-color: #F8FAFC; 
+            color: #1E293B; 
+            padding: 8px 10px; 
             font-size: 11px; 
-            font-weight: bold;
+            font-weight: 800;
             text-transform: uppercase; 
-            margin-top: 14px; 
+            margin-top: 18px; 
             margin-bottom: 8px;
-            border-radius: 3px;
+            border-bottom: 2px solid #E2E8F0;
             letter-spacing: 0.5px;
         }
 
         /* Cuadre de Caja Special */
-        .cuadre-box { border: 2px solid #28a745; border-radius: 4px; margin-bottom: 14px; overflow: hidden; }
-        .cuadre-header { background-color: #28a745; color: white; padding: 6px; font-size: 11px; font-weight: bold; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }
+        .cuadre-box { border: 1px solid #E2E8F0; border-radius: 4px; margin-bottom: 18px; overflow: hidden; }
+        .cuadre-header { background-color: #0F172A; color: white; padding: 8px; font-size: 11px; font-weight: bold; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }
         .cuadre-table { width: 100%; border-collapse: collapse; text-align: center; }
-        .cuadre-table td { padding: 8px 5px; width: 20%; border-right: 1px solid #e0e0e0; }
-        .cuadre-table td:last-child { border-right: none; background-color: #f1fbf2; }
-        .cuadre-label { font-size: 9px; color: #666; text-transform: uppercase; display: block; margin-bottom: 3px; }
-        .cuadre-value { font-size: 13px; font-weight: bold; color: #222; }
-        .cuadre-value-total { font-size: 18px; font-weight: bold; color: #28a745; }
+        .cuadre-table td { padding: 10px 5px; width: 20%; border-right: 1px solid #E2E8F0; }
+        .cuadre-table td:last-child { border-right: none; background-color: #ECFDF5; }
+        .cuadre-label { font-size: 9px; color: #64748B; text-transform: uppercase; display: block; margin-bottom: 4px; font-weight: bold; }
+        .cuadre-value { font-size: 13px; font-weight: bold; color: #334155; }
+        .cuadre-value-total { font-size: 18px; font-weight: 800; color: #059669; }
 
         /* Tablas */
         .table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-        .table th, .table td { border: 1px solid #e2e8f0; padding: 5px 7px; font-size: 10px; }
-        .table th { background-color: #edf2f7; color: #2d3748; text-transform: uppercase; font-weight: bold; font-size: 9px; }
-        .table-striped tr:nth-child(even) { background-color: #f7fafc; }
+        .table th, .table td { border-bottom: 1px solid #E2E8F0; padding: 6px 8px; font-size: 10px; }
+        .table th { background-color: #F8FAFC; color: #64748B; text-transform: uppercase; font-weight: bold; font-size: 9px; border-bottom: 2px solid #E2E8F0; text-align: left; }
+        .table-striped tr:nth-child(even) { background-color: #F8FAFC; }
         
-        .cat-header { background-color: #3182ce; color: #ffffff; padding: 5px 8px; font-weight: bold; font-size: 10px; text-transform: uppercase; }
+        .cat-header { background-color: #F1F5F9; color: #1E293B; padding: 6px 8px; font-weight: 800; font-size: 10px; text-transform: uppercase; border-bottom: 2px solid #CBD5E1; }
 
         /* Observaciones */
-        .obs-box { border: 1px solid #bbeeeb; background-color: #f0fdfa; padding: 10px; border-radius: 4px; margin-top: 10px; }
-        .obs-title { font-size: 10px; font-weight: bold; color: #0f766e; text-transform: uppercase; margin-bottom: 5px; border-bottom: 1px solid #ccfbf1; padding-bottom: 3px; }
+        .obs-box { border: 1px solid #E2E8F0; background-color: #F8FAFC; padding: 10px; border-radius: 4px; margin-top: 10px; }
+        .obs-title { font-size: 10px; font-weight: 800; color: #1E293B; text-transform: uppercase; margin-bottom: 5px; padding-bottom: 3px; }
+
     </style>
 </head>
 <body>
@@ -178,10 +179,10 @@
                     <tr>
                         <th class="text-left" style="width: 32%;">Producto</th>
                         <th class="text-center" style="width: 8%;">Cant.</th>
-                        <th class="text-right" style="width: 15%;">Precio Base</th>
-                        <th class="text-center" style="width: 17%;">Promoción</th>
-                        <th class="text-center" style="width: 13%;">Método de Pago</th>
-                        <th class="text-right" style="width: 15%;">Subtotal</th>
+                        <th class="text-right" style="width: 15%; text-align: right;">Precio Base</th>
+                        <th class="text-center" style="width: 17%; text-align: center;">Promoción</th>
+                        <th class="text-center" style="width: 13%; text-align: center;">Método de Pago</th>
+                        <th class="text-right" style="width: 15%; text-align: right;">Subtotal</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -189,8 +190,8 @@
                         <tr>
                             <td class="text-left font-weight-bold">{{ $item->producto_nombre }}</td>
                             <td class="text-center font-weight-bold">{{ $item->cantidad }}</td>
-                            <td class="text-right">${{ number_format($item->precio_unitario, 0, ',', '.') }}</td>
-                            <td class="text-center">
+                            <td class="text-right" style="text-align: right;">${{ number_format($item->precio_unitario, 0, ',', '.') }}</td>
+                            <td class="text-center" style="text-align: center;">
                                 @if($item->descuento > 0)
                                     <span class="badge badge-warning">Promo (-${{ number_format($item->descuento, 0, ',', '.') }})</span>
                                 @elseif($item->tiene_promo)
@@ -199,7 +200,7 @@
                                     <span class="badge badge-secondary">Normal</span>
                                 @endif
                             </td>
-                            <td class="text-center">
+                            <td class="text-center" style="text-align: center;">
                                 @if($item->metodo_pago === 'efectivo')
                                     <span class="badge badge-success">Efectivo</span>
                                 @elseif(in_array($item->metodo_pago, ['transferencia', 'nequi']))
@@ -210,7 +211,7 @@
                                     <span class="badge badge-secondary">{{ ucfirst($item->metodo_pago) }}</span>
                                 @endif
                             </td>
-                            <td class="text-right text-success font-weight-bold">
+                            <td class="text-right text-success font-weight-bold" style="text-align: right; color: #059669;">
                                 ${{ number_format($item->subtotal, 0, ',', '.') }}
                             </td>
                         </tr>
@@ -251,7 +252,7 @@
                             @forelse($fiadosDelDia as $fiado)
                             <tr>
                                 <td class="text-left font-weight-bold">{{ $fiado->cliente_fiado ?? 'Sin Nombre' }}</td>
-                                <td class="text-right text-danger font-weight-bold">${{ number_format($fiado->total, 0, ',', '.') }}</td>
+                                <td class="text-right text-danger font-weight-bold" style="text-align: right; color: #E11D48;">${{ number_format($fiado->total, 0, ',', '.') }}</td>
                             </tr>
                             @empty
                             <tr><td colspan="2" class="text-center text-muted">No se otorgaron fiados.</td></tr>
@@ -284,7 +285,7 @@
                                         {{ ($cobro->metodo_pago_saldo === 'transferencia' || in_array($cobro->metodo_pago, ['transferencia', 'nequi'])) ? 'Transf.' : 'Efectivo' }}
                                     </span>
                                 </td>
-                                <td class="text-right text-success font-weight-bold">${{ number_format($cobro->total, 0, ',', '.') }}</td>
+                                <td class="text-right text-success font-weight-bold" style="text-align: right; color: #059669;">${{ number_format($cobro->total, 0, ',', '.') }}</td>
                             </tr>
                             @empty
                             <tr><td colspan="3" class="text-center text-muted">No se cobraron fiados.</td></tr>
@@ -313,7 +314,7 @@
                         $diferencia = $fisico - ($item->stock_esperado ?? 0);
                     @endphp
                 <tr>
-                    <td class="text-left font-weight-bold">{{ $item->producto->nombre ?? 'Producto' }}</td>
+                    <td class="text-left font-weight-bold">{{ $item->producto->nombre ?? 'Producto' }} <span style="color: #4a5568; font-weight: normal; font-size: 9px;">({{ $item->producto->categoria->nombre ?? 'Sin Categoría' }})</span></td>
                     <td class="text-center">{{ $item->stock_esperado ?? 0 }}</td>
                     <td class="text-center font-weight-bold">{{ $fisico }}</td>
                     <td class="text-center font-weight-bold">

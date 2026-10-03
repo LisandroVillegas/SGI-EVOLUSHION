@@ -1,16 +1,16 @@
 @extends('adminlte::page')
 
-
+@section('title', 'Detalle de Categoría')
 
 @section('content_header')
-<nav aria-label="breadcrumb" style="font-size: 18pt">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{{ url('/admin') }}">Inicio</a></li>
-    <li class="breadcrumb-item"><a href="{{ url('/admin/categorias') }}">Categorias</a></li>
-    <li class="breadcrumb-item active" aria-current="page">Datos de la Categoria</li>
-  </ol>
-</nav>
-<hr>
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="m-0 text-dark font-weight-bold">
+        <i class="fas fa-tags text-info mr-2"></i>Detalle de Categoría
+    </h1>
+    <a href="{{ url('/admin/categorias') }}" class="btn btn-secondary font-weight-bold shadow-sm">
+        <i class="fas fa-arrow-left mr-1"></i> Volver a Categorías
+    </a>
+</div>
 @stop
 
 @section('content')

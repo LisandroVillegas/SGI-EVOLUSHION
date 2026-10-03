@@ -1,92 +1,100 @@
 @extends('adminlte::page')
 
+@section('title', 'Compras')
+
 @section('content_header')
-<nav aria-label="breadcrumb" style="font-size: 18pt">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{{ url('/admin') }}">Inicio</a></li>
-    <li class="breadcrumb-item"><a href="{{ url('/admin/compras') }}">Compras</a></li>
-    <li class="breadcrumb-item active" aria-current="page">Lista de Compras</li>
-  </ol>
-</nav>
-<hr>
+<div class="d-flex justify-content-between align-items-center flex-wrap" style="gap:8px;">
+    <h1 class="m-0 text-dark font-weight-bold">
+        <i class="fas fa-shopping-cart text-primary mr-2"></i>Compras / Egresos
+    </h1>
+    <div class="d-flex" style="gap:6px;">
+        <button type="button" class="btn btn-warning font-weight-bold shadow-sm" data-toggle="modal" data-target="#modalCompraRapida">
+            <i class="fas fa-bolt mr-1"></i> Compra Rápida / Egreso
+        </button>
+        <a class="btn btn-primary font-weight-bold shadow-sm" href="{{ url('/admin/compras/create') }}">
+            <i class="fas fa-plus-circle mr-1"></i> Nueva Compra (Inventariable)
+        </a>
+    </div>
+</div>
 @stop
 
 @section('content')
-<div class="row">
-    <div class="col-md-12">
-        <div class="card card-outline card-primary">
-            <div class="card-header">
-                <h3 class="card-title">Compras / Ingresos Registrados</h3>
-                <div class="card-tools">
-                    <button type="button" class="btn btn-warning font-weight-bold mr-2 shadow-sm" data-toggle="modal" data-target="#modalCompraRapida">
-                        <i class="fas fa-bolt mr-1"></i> Compra Rápida / Egreso
-                    </button>
-                    <a class="btn btn-primary font-weight-bold shadow-sm" href="{{ url('/admin/compras/create') }}">
-                        <i class="fas fa-plus mr-1"></i> Crear Nuevo (Inventariable)
-                    </a>
-                </div>
-            </div>
-            <div class="card-body p-0 p-md-3">
-                <div class="table-responsive">
-                <table id="example1" class="table table-striped table-bordered table-hover table-sm">
-                    <thead>
+<div class="card card-outline card-primary shadow-sm">
+    <div class="card-header">
+        <h3 class="card-title font-weight-bold m-0">
+            <i class="fas fa-list mr-2 text-primary"></i>Historial de Compras / Egresos
+        </h3>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tablaCompras" class="table table-bordered table-striped table-hover text-center align-middle">
+                <thead class="thead-dark">
+                    <tr>
+                        <th style="width:50px">#</th>
+                        <th>Comprobante</th>
+                        <th>Tipo</th>
+                        <th class="text-left">Detalle / Concepto</th>
+                        <th>Fecha</th>
+                        <th class="text-right">Total</th>
+                        <th style="width:130px">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($compras as $compra)
                         <tr>
-                            <th style="text-align: center">Nro</th>
-                            <th style="text-align: center">Comprobante</th>
-                            <th style="text-align: center">Tipo</th>
-                            <th style="text-align: center">Detalle / Concepto</th>
-                            <th style="text-align: center">Fecha</th>
-                            <th style="text-align: center">Total</th>
-                            <th style="text-align: center">Acciones</th>
+                            <td class="align-middle font-weight-bold text-muted">{{ $loop->iteration }}</td>
+                            <td class="align-middle">
+                                <code class="text-dark">{{ $compra->comprobante ?? 'S/N' }}</code>
+                            </td>
+                            <td class="align-middle">
+                                @if (($compra->tipo ?? 'normal') === 'rapida')
+                                    <span class="badge badge-warning px-2 py-1 font-weight-bold">
+                                        <i class="fas fa-bolt mr-1"></i> Rápida
+                                    </span>
+                                @else
+                                    <span class="badge badge-info px-2 py-1 font-weight-bold">
+                                        <i class="fas fa-boxes mr-1"></i> Inventario
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="align-middle text-left">
+                                @if (($compra->tipo ?? 'normal') === 'rapida')
+                                    <strong class="text-dark">{{ $compra->concepto ?? 'Sin concepto registrado' }}</strong>
+                                @else
+                                    @forelse ($compra->detalles as $det)
+                                        <small class="d-block text-muted">• {{ $det->cantidad }}x {{ $det->producto->nombre ?? 'Producto Eliminado' }}</small>
+                                    @empty
+                                        <small class="text-muted fst-italic">Sin detalles de productos</small>
+                                    @endforelse
+                                @endif
+                            </td>
+                            <td class="align-middle">{{ $compra->fecha }}</td>
+                            <td class="align-middle text-right font-weight-bold text-success">
+                                ${{ number_format($compra->total, 0, ',', '.') }}
+                            </td>
+                            <td class="align-middle">
+                                <div style="display:flex; justify-content:center; align-items:center; gap:5px;">
+                                    <a href="{{ url('/admin/compras/'.$compra->id) }}"
+                                       class="btn btn-info btn-sm font-weight-bold shadow-sm" title="Ver">
+                                        <i class="fas fa-eye"></i><span class="btn-accion-texto ml-1"> Ver</span>
+                                    </a>
+                                    <form action="{{ url('/admin/compras/'.$compra->id) }}" method="POST"
+                                          class="d-inline form-secured"
+                                          data-secured-message="¿Desea eliminar esta compra?">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                class="btn btn-danger btn-sm font-weight-bold shadow-sm text-white"
+                                                title="Eliminar">
+                                            <i class="fas fa-trash-alt"></i><span class="btn-accion-texto ml-1"> Eliminar</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($compras as $compra)
-                            <tr>
-                                <td style="text-align: center; vertical-align: middle;">{{ $loop->iteration }}</td>
-                                <td style="text-align: center; vertical-align: middle;">{{ $compra->comprobante ?? 'S/N' }}</td>
-                                <td style="text-align: center; vertical-align: middle;">
-                                    @if (($compra->tipo ?? 'normal') === 'rapida')
-                                        <span class="badge badge-warning p-2"><i class="fas fa-bolt mr-1"></i> Rápida</span>
-                                    @else
-                                        <span class="badge badge-info p-2"><i class="fas fa-boxes mr-1"></i> Inventario</span>
-                                    @endif
-                                </td>
-                                <td style="text-align: left; vertical-align: middle;">
-                                    @if (($compra->tipo ?? 'normal') === 'rapida')
-                                        <strong>{{ $compra->concepto ?? 'Sin concepto registrado' }}</strong>
-                                    @else
-                                        @forelse ($compra->detalles as $det)
-                                            <small class="d-block">• {{ $det->cantidad }}x {{ $det->producto->nombre ?? 'Producto Eliminado' }}</small>
-                                        @empty
-                                            <small class="text-muted">Sin detalles de productos</small>
-                                        @endforelse
-                                    @endif
-                                </td>
-                                <td style="text-align: center; vertical-align: middle;">{{ $compra->fecha }}</td>
-                                <td style="text-align: center; vertical-align: middle;" class="font-weight-bold text-success">
-                                    ${{ number_format($compra->total, 0, ',', '.') }}
-                                </td>
-                                <td style="text-align: center; vertical-align: middle;">
-                                    <div style="display: flex; justify-content: center; align-items: center; gap: 4px;">
-                                        <a href="{{ url('/admin/compras/'.$compra->id) }}" class="btn btn-info btn-sm font-weight-bold shadow-sm" title="Ver">
-                                            <i class="fas fa-eye"></i><span class="btn-accion-texto ml-1"> Ver</span>
-                                        </a>
-                                        <form action="{{ url('/admin/compras/'.$compra->id) }}" method="POST" class="d-inline form-secured" data-secured-message="&iquest;Desea eliminar esta compra?">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger btn-sm font-weight-bold shadow-sm text-white" title="Eliminar">
-                                                <i class="fas fa-trash-alt"></i><span class="btn-accion-texto ml-1"> Eliminar</span>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-                </div><!-- /.table-responsive -->
-            </div>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -138,78 +146,8 @@
 </div>
 @stop
 
-@section('css')
-<style>
-    #example1_wrapper .dt-buttons {
-        background-color: transparent;
-        box-shadow: none;
-        border: none;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 6px;
-        margin-bottom: 15px;
-    }
-
-    #example1_wrapper .dt-buttons .btn {
-        color: white;
-        border-radius: 4px;
-        padding: 5px 15px;
-        font-size: 14px;
-    }
-
-    .btn-danger { background-color: #dc3545; border: none; }
-    .btn-success { background-color: #28a745; border: none; }
-    .btn-info { background-color: #17a2b8; border: none; }
-    .btn-warning { background-color: #ffc107; color: #212529; border: none; }
-    .btn-default { background-color: #6c757d; border: none; }
-
-    /* === RESPONSIVE MÓVIL: botones de acción solo muestran ícono === */
-    @media (max-width: 575.98px) {
-        .btn-accion-texto { display: none; }
-        .btn-sm { padding: 4px 8px; }
-        #example1_wrapper .dt-buttons .btn { font-size: 12px; padding: 4px 8px; }
-        .card-header .card-tools { flex-direction: column; align-items: flex-end; gap: 4px; }
-    }
-</style>
-@stop
+@include('admin.partials._datatables', ['tableId' => 'tablaCompras', 'entidad' => 'Compras', 'conBotones' => true])
 
 @section('js')
 @include('admin.partials.pin-security')
-
-<script>
-    $(function () {
-        $("#example1").DataTable({
-            "pageLength": 10,
-            "scrollX": true,
-            "language": {
-                "emptyTable": "No hay información",
-                "info": "Mostrando _START_ a _END_ de _TOTAL_ Compras",
-                "infoEmpty": "Mostrando 0 a 0 de 0 Compras",
-                "infoFiltered": "(Filtrado de _MAX_ total Compras)",
-                "lengthMenu": "Mostrar _MENU_ Compras",
-                "loadingRecords": "Cargando...",
-                "processing": "Procesando...",
-                "search": "Buscador:",
-                "zeroRecords": "Sin resultados encontrados",
-                "paginate": {
-                    "first": "Primero",
-                    "last": "Último",
-                    "next": "Siguiente",
-                    "previous": "Anterior"
-                }
-            },
-            "responsive": false,
-            "lengthChange": true,
-            "autoWidth": false,
-            buttons: [
-                { text: '<i class="fas fa-copy"></i> COPIAR', extend: 'copy', className: 'btn btn-default' },
-                { text: '<i class="fas fa-file-pdf"></i> PDF', extend: 'pdf', className: 'btn btn-danger' },
-                { text: '<i class="fas fa-file-csv"></i> CSV', extend: 'csv', className: 'btn btn-info' },
-                { text: '<i class="fas fa-file-excel"></i> EXCEL', extend: 'excel', className: 'btn btn-success' },
-                { text: '<i class="fas fa-print"></i> IMPRIMIR', extend: 'print', className: 'btn btn-warning' }
-            ]
-        }).buttons().container().appendTo('#example1_wrapper .row:eq(0)');
-    });
-</script>
 @stop

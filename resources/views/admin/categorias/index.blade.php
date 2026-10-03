@@ -1,144 +1,83 @@
 @extends('adminlte::page')
 
+@section('title', 'Categorías')
+
 @section('content_header')
-<nav aria-label="breadcrumb" style="font-size: 18pt">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{{ url('/admin') }}">Inicio</a></li>
-    <li class="breadcrumb-item"><a href="{{ url('/admin/categorias') }}">Categorías</a></li>
-    <li class="breadcrumb-item active" aria-current="page">Lista de Categorías</li>
-  </ol>
-</nav>
-<hr>
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="m-0 text-dark font-weight-bold">
+        <i class="fas fa-tags text-primary mr-2"></i>Categorías
+    </h1>
+    <a href="{{ url('/admin/categorias/create') }}" class="btn btn-primary font-weight-bold shadow-sm">
+        <i class="fas fa-plus-circle mr-1"></i> Nueva Categoría
+    </a>
+</div>
 @stop
 
 @section('content')
-<div class="row">
-    <div class="col-md-12">
-        <div class="card card-outline card-primary">
-            <div class="card-header">
-                <h3 class="card-title">Categorías Registradas</h3>
-                <div class="card-tools">
-                    <a class="btn btn-primary" href="{{ url('/admin/categorias/create') }}">Crear Nuevo</a>
-                </div>
-            </div>
-            <div class="card-body p-0 p-md-3">
-                <div class="table-responsive">
-                <table id="example1" class="table table-striped table-bordered table-hover table-sm">
-                    <thead>
+<div class="card card-outline card-primary shadow-sm">
+    <div class="card-header">
+        <h3 class="card-title font-weight-bold m-0">
+            <i class="fas fa-list mr-2 text-primary"></i>Categorías Registradas
+        </h3>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="tablaCategorias" class="table table-bordered table-striped table-hover text-center align-middle">
+                <thead class="thead-dark">
+                    <tr>
+                        <th style="width:50px">#</th>
+                        <th class="text-left">Nombre</th>
+                        <th class="text-left">Descripción</th>
+                        <th style="width:190px">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($categorias as $categoria)
                         <tr>
-                            <th style="text-align: center">Nro</th>
-                            <th style="text-align: center">Nombre</th>
-                            <th style="text-align: center">Descripción</th>
-                            <th style="text-align: center">Acciones</th>
+                            <td class="align-middle font-weight-bold text-muted">{{ $loop->iteration }}</td>
+                            <td class="align-middle text-left font-weight-bold text-dark">
+                                <i class="fas fa-tag mr-1 text-primary"></i>
+                                {{ $categoria->nombre }}
+                            </td>
+                            <td class="align-middle text-left text-muted">
+                                {{ $categoria->descripcion ?: '—' }}
+                            </td>
+                            <td class="align-middle">
+                                <div style="display:flex; justify-content:center; align-items:center; gap:5px;">
+                                    <a href="{{ url('/admin/categoria/'.$categoria->id) }}"
+                                       class="btn btn-info btn-sm font-weight-bold shadow-sm"
+                                       title="Ver detalle">
+                                        <i class="fas fa-eye"></i><span class="btn-accion-texto ml-1"> Ver</span>
+                                    </a>
+                                    <a href="{{ url('/admin/categoria/'.$categoria->id.'/edit') }}"
+                                       class="btn btn-warning btn-sm font-weight-bold shadow-sm"
+                                       title="Editar">
+                                        <i class="fas fa-edit"></i><span class="btn-accion-texto ml-1"> Editar</span>
+                                    </a>
+                                    <form action="{{ url('/admin/categoria/'.$categoria->id) }}" method="POST"
+                                          class="d-inline form-secured"
+                                          data-secured-message="¿Desea eliminar la categoría '{{ $categoria->nombre }}'?">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                class="btn btn-danger btn-sm font-weight-bold shadow-sm text-white"
+                                                title="Eliminar">
+                                            <i class="fas fa-trash-alt"></i><span class="btn-accion-texto ml-1"> Eliminar</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($categorias as $categoria)
-                            <tr>
-                                <td style="text-align: center; vertical-align: middle;">{{ $loop->iteration }}</td>
-                                <td style="text-align: center; vertical-align: middle;">{{ $categoria->nombre }}</td>
-                                <td style="text-align: center; vertical-align: middle;">{{ $categoria->descripcion }}</td>
-                                <td style="text-align: center; vertical-align: middle;">
-                                    <div style="display: flex; justify-content: center; align-items: center; gap: 4px;">
-                                        <a href="{{ url('/admin/categoria/'.$categoria->id) }}" class="btn btn-info btn-sm font-weight-bold shadow-sm" title="Ver">
-                                            <i class="fas fa-eye"></i><span class="btn-accion-texto ml-1"> Ver</span>
-                                        </a>
-                                        <a href="{{ url('/admin/categoria/'.$categoria->id.'/edit') }}" class="btn btn-warning btn-sm font-weight-bold shadow-sm" title="Editar">
-                                            <i class="fas fa-edit"></i><span class="btn-accion-texto ml-1"> Editar</span>
-                                        </a>
-                                        <form action="{{ url('/admin/categoria/'.$categoria->id) }}" method="POST" class="d-inline form-secured" data-secured-message="¿Desea eliminar esta categoría?">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger btn-sm font-weight-bold shadow-sm text-white" title="Eliminar">
-                                                <i class="fas fa-trash-alt"></i><span class="btn-accion-texto ml-1"> Eliminar</span>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-                </div><!-- /.table-responsive -->
-            </div>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 @stop
 
-@section('css')
-    <style>
-    #example1_wrapper .dt-buttons {
-        background-color: transparent;
-        box-shadow: none;
-        border: none;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 6px;
-        margin-bottom: 15px;
-    }
-    #example1_wrapper .dt-buttons .btn {
-        color: #fff;
-        border-radius: 4px;
-        padding: 5px 15px;
-        font-size: 14px;
-    }
-    .btn-danger { background-color: #dc3545; border: none; }
-    .btn-success { background-color: #28a745; border: none; }
-    .btn-info { background-color: #17a2b8; border: none; }
-    .btn-warning { background-color: #ffc107; color: #212529; border: none; }
-    .btn-default { background-color: #6e7176; color: #212529; border: none; }
-
-    /* === RESPONSIVE MÓVIL: botones de acción solo muestran ícono === */
-    @media (max-width: 575.98px) {
-        .btn-accion-texto { display: none; }
-        .btn-sm { padding: 4px 8px; }
-        #example1_wrapper .dt-buttons .btn { font-size: 12px; padding: 4px 8px; }
-        .card-header .card-tools { margin-top: 6px; }
-    }
-    </style>
-@stop
+@include('admin.partials._datatables', ['tableId' => 'tablaCategorias', 'entidad' => 'Categorías', 'conBotones' => false])
 
 @section('js')
 @include('admin.partials.pin-security')
-<script>
-    $(function () {
-        $("#example1").DataTable({
-            "pageLength": 10,
-            "scrollX": true,
-            "language": {
-                "emptyTable": "No hay información",
-                "info": "Mostrando _START_ a _END_ de _TOTAL_ Categorías",
-                "infoEmpty": "Mostrando 0 a 0 de 0 Categorías",
-                "infoFiltered": "(Filtrado de _MAX_ total Categorías)",
-                "lengthMenu": "Mostrar _MENU_ Categorías",
-                "loadingRecords": "Cargando...",
-                "processing": "Procesando...",
-                "search": "Buscador:",
-                "zeroRecords": "Sin resultados encontrados",
-                "paginate": {
-                    "first": "Primero",
-                    "last": "Último",
-                    "next": "Siguiente",
-                    "previous": "Anterior"
-                }
-            },
-            "responsive": false,
-            "lengthChange": true,
-            "autoWidth": false,
-            "columnDefs": [
-                { "targets": 2, "responsivePriority": 3 },
-                { "targets": 3, "responsivePriority": 1 }
-            ],
-            buttons: [
-                { text: '<i class="fas fa-copy"></i> COPIAR', extend: 'copy', className: 'btn btn-default' },
-                { text: '<i class="fas fa-file-pdf"></i> PDF', extend: 'pdf', className: 'btn btn-danger' },
-                { text: '<i class="fas fa-file-csv"></i> CSV', extend: 'csv', className: 'btn btn-info' },
-                { text: '<i class="fas fa-file-excel"></i> EXCEL', extend: 'excel', className: 'btn btn-success' },
-                { text: '<i class="fas fa-print"></i> IMPRIMIR', extend: 'print', className: 'btn btn-warning' }
-            ]
-        }).buttons().container().appendTo('#example1_wrapper .row:eq(0)');
-    });
-</script>
 @stop

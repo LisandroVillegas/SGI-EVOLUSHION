@@ -19,7 +19,7 @@ class Turno extends Model
         'total_efectivo_real',
         'total_descuadre_dinero',
         'estado',
-        'notas',
+        'observaciones',
         'sueldo',
     ];
 

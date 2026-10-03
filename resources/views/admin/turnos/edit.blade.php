@@ -1,14 +1,16 @@
 @extends('adminlte::page')
 
+@section('title', 'Cerrar Turno')
+
 @section('content_header')
-<nav aria-label="breadcrumb" style="font-size: 16pt">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{{ url('/admin') }}">Inicio</a></li>
-    <li class="breadcrumb-item"><a href="{{ url('/admin/turnos') }}">Turnos</a></li>
-    <li class="breadcrumb-item active" aria-current="page">Cerrar Turno</li>
-  </ol>
-</nav>
-<hr class="mt-0">
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="m-0 text-dark font-weight-bold">
+        <i class="fas fa-lock text-warning mr-2"></i>Cierre de Turno
+    </h1>
+    <a href="{{ url('/admin/turnos') }}" class="btn btn-secondary font-weight-bold shadow-sm">
+        <i class="fas fa-arrow-left mr-1"></i> Volver a Turnos
+    </a>
+</div>
 @stop
 
 @section('content')
@@ -124,7 +126,7 @@
                                     <a class="nav-link active py-1 px-2 font-weight-bold" id="tab-cierre" data-toggle="pill" href="#content-cierre" role="tab"><small><i class="fas fa-calculator mr-1"></i> Cierre</small></a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link py-1 px-2 font-weight-bold" id="tab-apertura" data-toggle="pill" href="#content-apertura" role="tab"><small><i class="fas fa-history mr-1"></i> Apertura</small></a>
+                                    <a class="nav-link py-1 px-2 font-weight-bold" id="tab-apertura" data-toggle="pill" href="#content-apertura" role="tab"><small><i class="fas fa-history mr-1"></i> Apertura y Bitácora</small></a>
                                 </li>
                             </ul>
                         </div>
@@ -135,7 +137,7 @@
                                               class="form-control form-control-sm bg-light" readonly style="resize: none; font-size: 9pt;"></textarea>
                                 </div>
                                 <div class="tab-pane fade" id="content-apertura" role="tabpanel">
-                                    <textarea class="form-control form-control-sm bg-light" rows="6" readonly style="resize: none; font-size: 9pt;">{{ $turno->notas ?? 'Sin novedades al abrir.' }}</textarea>
+                                    <div class="form-control form-control-sm bg-light" style="height: auto; min-height: 120px; white-space: pre-line; font-size: 9pt; overflow-y: auto;">{{ $turno->observaciones ?? 'Sin novedades al abrir.' }}</div>
                                 </div>
                             </div>
                         </div>
@@ -324,7 +326,7 @@
         let totalCompras = {{ $totalCompras }};
         let totalFiadoCobrado = {{ $totalFiadoCobrado }};
         let egresosTexto = @json($detalleEgresosTexto ?? []);
-        let notasTurno = @json($turno->notas ?? '');
+        let notasTurno = @json($turno->observaciones ?? '');
 
         function recalcularFinanzas() {
             let pagoTrabajadora = parseFloat($('#pago_trabajadora').val()) || 0;

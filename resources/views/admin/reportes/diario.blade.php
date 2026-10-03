@@ -4,39 +4,127 @@
 
 @section('css')
 <style>
-    /* Estilos corporativos mejorados */
-    .dashboard-bg { background-color: #f4f6f9; }
-    .kpi-card { border: none; border-radius: 10px; transition: transform 0.2s ease, box-shadow 0.2s ease; overflow: hidden; }
-    .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1) !important; }
-    .kpi-icon { font-size: 3rem; opacity: 0.15; position: absolute; right: 15px; bottom: 10px; }
+    /* Estilos SaaS Moderno */
+    .dashboard-bg { background-color: #F8FAFC; }
+    .kpi-card { background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; transition: transform 0.2s ease, box-shadow 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.04); overflow: hidden; }
+    .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06) !important; }
+    .kpi-icon { font-size: 3rem; opacity: 0.2; position: absolute; right: 15px; bottom: -5px; }
     
-    .card-custom { border-radius: 10px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
-    .card-header-custom { background-color: #fff; border-bottom: 1px solid #eaeaea; border-radius: 10px 10px 0 0 !important; padding: 1.2rem 1.5rem; }
-    .section-title { font-size: 1.1rem; font-weight: 700; color: #343a40; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; }
+    /* Estilos de jerarquía y relieve encapsulados para este reporte */
+    .card { 
+        border: 1.5px solid #0F172A !important; 
+        border-radius: 12px !important; 
+        overflow: hidden !important; 
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.1) !important; 
+    }
+    .card-header {
+        border-bottom: none !important;
+    }
+
+    /* Tarjeta Contenedora Principal */
+    .card-custom { 
+        background-color: #FFFFFF; 
+        border-radius: 12px !important; 
+        border: 1.5px solid #0F172A !important; 
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.1) !important; 
+        margin-bottom: 1.5rem; 
+        overflow: hidden !important; 
+    }
+
+    /* Encabezado Principal del Bloque (Negro) */
+    .card-header-custom { 
+        background-color: #0F172A !important; 
+        border-bottom: 1px solid #1E293B !important; 
+        padding: 1rem 1.25rem; 
+        color: #FFFFFF; 
+    }
+    .section-title { 
+        font-size: 0.95rem; 
+        font-weight: 700; 
+        color: #FFFFFF !important; 
+        margin: 0; 
+        text-transform: uppercase; 
+        letter-spacing: 0.05em; 
+    }
     
+    /* Encabezados de Columnas de la Tabla */
     .table-modern { margin-bottom: 0; }
-    .table-modern thead th { border-top: none; border-bottom: 2px solid #edf2f9; color: #495057; font-size: 0.8rem; text-transform: uppercase; font-weight: 700; }
-    .table-modern tbody td { vertical-align: middle; border-bottom: 1px solid #edf2f9; color: #212529; font-size: 0.95rem; }
+    .table-modern thead th, .thead-light th { 
+        border-top: none !important; 
+        border-bottom: 1px solid #E2E8F0 !important; 
+        background-color: #F1F5F9 !important; 
+        color: #334155 !important; 
+        font-size: 0.8rem; 
+        text-transform: uppercase; 
+        font-weight: 700; 
+        letter-spacing: 0.05em; 
+        padding: 12px 15px; 
+    }
+    .table-modern tbody td { vertical-align: middle; border-bottom: 1px solid #E2E8F0; color: #0F172A; font-size: 0.95rem; font-weight: 600; }
     
-    .badge-soft-success { background-color: #d1f2e1; color: #0f5132; }
-    .badge-soft-danger { background-color: #f8d7da; color: #842029; }
-    .badge-soft-warning { background-color: #fff3cd; color: #664d03; }
-    .badge-soft-info { background-color: #cff4fc; color: #055160; }
+    .badge-saas-success { background-color: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; }
+    .badge-saas-danger { background-color: #FFF1F2; color: #E11D48; border: 1px solid #FECDD3; }
+    .badge-saas-warning { background-color: #FEF08A !important; color: #713F12 !important; border: 1px solid #FDE047 !important; font-weight: 700 !important; }
+    .badge-saas-info { background-color: #F0F9FF; color: #0369A1; border: 1px solid #BAE6FD; }
+    .badge-soft-info { background-color: #E0F2FE; color: #0369A1; border: 1px solid #BAE6FD; }
     
-    .math-operator { font-size: 1.8rem; color: #6c757d; font-weight: bold; }
-    .amount-display { font-family: 'Consolas', 'Courier New', monospace; font-size: 1.3rem; font-weight: bold; }
-    .amount-total { font-size: 2.2rem; color: #198754; font-weight: 900; letter-spacing: -1px; }
+    .math-operator { font-size: 1.5rem; color: #94A3B8; font-weight: 300; }
+    .amount-display { font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-weight: 700; }
     
-    /* Etiquetas más oscuras para mejor lectura */
-    .label-title { font-size: 0.85rem; letter-spacing: 0.5px; color: #495057; }
+    /* Hero Card */
+    .label-title { font-size: 0.75rem; letter-spacing: 0.05em; color: #9eb0c9ff; text-transform: uppercase; font-weight: 600; margin-bottom: 0.5rem; }
+    .kpi-amount { font-size: 1.75rem; color: #0F172A; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 0; }
+    
+    /* Botón SaaS Exportar PDF */
+    .btn-saas-pdf { background-color: #ffffffff; color: #fb5252ff; border: none; border-radius: 8px; font-weight: 600; font-size: 0.875rem; padding: 0.6rem 1.2rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease; white-space: nowrap; box-shadow: 0 2px 4px rgba(255, 20, 71, 0.87); }
+    .btn-saas-pdf:hover { background-color: #ff8888ff; color: #000000ff; text-decoration: none; transform: translateY(-1px); box-shadow: 0 5px 10px rgba(0, 0, 0, 0.35); }
+    .btn-saas-pdf i { font-size: 1rem; }
+    
+    /* Vibrant KPI Cards */
+    .kpi-card-vibrant { border-radius: 12px; border: none; overflow: hidden; color: #ffffff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s ease, box-shadow 0.2s ease; position: relative; padding: 1.25rem; }
+    .kpi-card-vibrant:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.15); }
+    .kpi-bg-ventas { background: linear-gradient(135deg, #10B981, #059669); }
+    .kpi-bg-efectivo { background: linear-gradient(135deg, #059669, #047857); }
+    .kpi-bg-nequi { background: linear-gradient(135deg, #3B82F6, #1D4ED8); }
+    .kpi-bg-fiados { background: linear-gradient(135deg, #F59E0B, #D97706); }
+    
+    .kpi-vibrant-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; opacity: 0.9; margin-bottom: 0.25rem; }
+    .kpi-vibrant-amount { font-size: 1.8rem; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; margin-bottom: 0; }
+    .kpi-vibrant-icon { font-size: 3.5rem; position: absolute; right: -5px; bottom: -10px; opacity: 0.2; }
+    .badge-vibrant { background-color: rgba(255, 255, 255, 0.2); color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 0.75rem; display: inline-block; margin-top: 8px; }
+
+    /* Dark Mode Premium Card */
+    .card-dark-premium { background-color: #0F172A; border-radius: 12px; border: 1px solid #1E293B; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); color: #FFFFFF; margin-bottom: 1.5rem; }
+    .card-header-dark { background-color: transparent; border-bottom: 1px solid #1E293B; padding: 1.25rem 1.5rem; border-radius: 12px 12px 0 0; display: flex; align-items: center; }
+    .dark-section-title { font-size: 1.1rem; font-weight: 800; color: #F8FAFC; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; }
+    
+    .dark-math-operator { font-size: 1.8rem; color: #475569; font-weight: 400; }
+    .dark-label-title { font-size: 0.8rem; text-transform: uppercase; font-weight: 700; color: #94A3B8; margin-bottom: 0.5rem; letter-spacing: 0.05em; }
+    .dark-amount-display { font-size: 1.3rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    
+    /* Colores del modo oscuro */
+    .dark-text-base { color: #38BDF8 !important; }
+    .dark-text-success { color: #34D399 !important; }
+    .dark-text-danger { color: #F87171 !important; }
+    .dark-text-warning { color: #FBBF24 !important; }
+
+    /* Efectivo a Entregar Glowing */
+    .glowing-box { background-color: rgba(16, 185, 129, 0.1); border: 1px solid #10B981; border-radius: 10px; box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); padding: 1rem 1.25rem; text-align: center; }
+    .glowing-label { font-size: 0.85rem; text-transform: uppercase; font-weight: 800; color: #10B981; margin-bottom: 0.25rem; letter-spacing: 0.05em; }
+    .glowing-amount { font-size: 2rem; font-weight: 900; color: #34D399; font-variant-numeric: tabular-nums; line-height: 1.1; margin-bottom: 0; }
 </style>
 @stop
 
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
-        <div>
-            <h1 class="m-0 text-dark font-weight-bold" style="letter-spacing: -0.5px;">Dashboard de Cierre Diario</h1>
-            <p class="text-secondary mb-0">Resumen operativo, financiero y de inventario</p>
+        <div class="d-flex align-items-center">
+            <div class="bg-dark text-white rounded p-2 mr-3 shadow-sm d-flex justify-content-center align-items-center" style="width: 45px; height: 45px;">
+                <i class="fas fa-chart-pie" style="font-size: 1.4rem;"></i>
+            </div>
+            <div>
+                <h1 class="m-0 text-dark font-weight-bold" style="letter-spacing: -0.5px;">Dashboard de Cierre Diario</h1>
+                <p class="text-secondary mb-0">Resumen operativo, financiero y de inventario</p>
+            </div>
         </div>
         <form method="GET" action="{{ route('reportes.diario') }}" class="d-flex align-items-center bg-white p-2 rounded shadow-sm border">
             <div class="input-group input-group-sm mr-3">
@@ -45,8 +133,8 @@
                 </div>
                 <input type="date" id="fecha" name="fecha" value="{{ $fecha }}" class="form-control border-0 font-weight-bold text-dark" style="background-color: #f8f9fa;" onchange="this.form.submit()">
             </div>
-            <a href="{{ route('reportes.diario.pdf', ['fecha' => $fecha]) }}" class="btn btn-danger btn-sm font-weight-bold text-white px-3 shadow-sm" target="_blank">
-                <i class="fas fa-file-pdf mr-1"></i> Exportar PDF
+            <a href="{{ route('reportes.diario.pdf', ['fecha' => $fecha]) }}" class="btn-saas-pdf" target="_blank">
+                <i class="fas fa-file-pdf"></i> Exportar PDF
             </a>
         </form>
     </div>
@@ -57,93 +145,97 @@
 
     {{-- 1. KPIs --}}
     <div class="row">
-        <div class="col-lg-3 col-6">
-            <div class="card kpi-card bg-white shadow-sm h-100 border-left border-info" style="border-left-width: 4px !important;">
-                <div class="card-body position-relative">
-                    <h6 class="label-title font-weight-bold text-uppercase mb-1">Total Ventas (Bruto)</h6>
-                    <h3 class="mb-0 font-weight-bold text-dark amount-display">${{ number_format($totalVendido, 0, ',', '.') }}</h3>
-                    @if(($totalDescuentos ?? 0) > 0)
-                        <span class="badge badge-warning text-dark font-weight-bold mt-1">
-                            <i class="fas fa-tags mr-1"></i> Ahorro Promos: -${{ number_format($totalDescuentos, 0, ',', '.') }}
-                        </span>
-                    @endif
-                    <i class="fas fa-chart-line kpi-icon text-info"></i>
-                </div>
+        <div class="col-lg-3 col-6 mb-3">
+            <div class="kpi-card-vibrant kpi-bg-ventas">
+                <div class="kpi-vibrant-title">Total Ventas (Bruto)</div>
+                <div class="kpi-vibrant-amount">${{ number_format($totalVendido ?? 0, 0, ',', '.') }}</div>
+                @if(($totalDescuentos ?? 0) > 0)
+                    <div class="badge-vibrant">
+                        <i class="fas fa-tags mr-1"></i> Ahorro: -${{ number_format($totalDescuentos, 0, ',', '.') }}
+                    </div>
+                @endif
+                <i class="fas fa-chart-line kpi-vibrant-icon"></i>
             </div>
         </div>
-        <div class="col-lg-3 col-6">
-            <div class="card kpi-card bg-white shadow-sm h-100 border-left border-success" style="border-left-width: 4px !important;">
-                <div class="card-body position-relative">
-                    <h6 class="label-title font-weight-bold text-uppercase mb-1">Efectivo Ingresado</h6>
-                    <h3 class="mb-0 font-weight-bold text-success amount-display">${{ number_format($totalEfectivo, 0, ',', '.') }}</h3>
-                    <i class="fas fa-money-bill-wave kpi-icon text-success"></i>
-                </div>
+        <div class="col-lg-3 col-6 mb-3">
+            <div class="kpi-card-vibrant kpi-bg-efectivo">
+                <div class="kpi-vibrant-title">Efectivo Ingresado</div>
+                <div class="kpi-vibrant-amount">${{ number_format($totalEfectivo ?? 0, 0, ',', '.') }}</div>
+                <i class="fas fa-money-bill-wave kpi-vibrant-icon"></i>
             </div>
         </div>
-        <div class="col-lg-3 col-6">
-            <div class="card kpi-card bg-white shadow-sm h-100 border-left border-primary" style="border-left-width: 4px !important;">
-                <div class="card-body position-relative">
-                    <h6 class="label-title font-weight-bold text-uppercase mb-1">Transferencias / Nequi</h6>
-                    <h3 class="mb-0 font-weight-bold text-primary amount-display">${{ number_format($totalNequi, 0, ',', '.') }}</h3>
-                    <i class="fas fa-mobile-alt kpi-icon text-primary"></i>
-                </div>
+        <div class="col-lg-3 col-6 mb-3">
+            <div class="kpi-card-vibrant kpi-bg-nequi">
+                <div class="kpi-vibrant-title">Transferencias / Nequi</div>
+                <div class="kpi-vibrant-amount">${{ number_format($totalNequi ?? 0, 0, ',', '.') }}</div>
+                <i class="fas fa-mobile-alt kpi-vibrant-icon"></i>
             </div>
         </div>
-        <div class="col-lg-3 col-6">
-            <div class="card kpi-card bg-white shadow-sm h-100 border-left border-danger" style="border-left-width: 4px !important;">
-                <div class="card-body position-relative">
-                    <h6 class="label-title font-weight-bold text-uppercase mb-1">Nuevas Deudas (Fiados)</h6>
-                    <h3 class="mb-0 font-weight-bold text-danger amount-display">${{ number_format($totalFiadoNuevo, 0, ',', '.') }}</h3>
-                    <i class="fas fa-file-invoice-dollar kpi-icon text-danger"></i>
-                </div>
+        <div class="col-lg-3 col-6 mb-3">
+            <div class="kpi-card-vibrant kpi-bg-fiados">
+                <div class="kpi-vibrant-title">Nuevas Deudas (Fiados)</div>
+                <div class="kpi-vibrant-amount">${{ number_format($totalFiadoNuevo ?? 0, 0, ',', '.') }}</div>
+                <i class="fas fa-file-invoice-dollar kpi-vibrant-icon"></i>
             </div>
         </div>
     </div>
 
-    {{-- 2. LIQUIDACIÓN Y CUADRE DE CAJA (Estructura de grilla corregida) --}}
-    <div class="card card-custom mt-2">
-        <div class="card-header-custom d-flex align-items-center">
+    {{-- 2. LIQUIDACIÓN Y CUADRE DE CAJA --}}
+    <div class="card-dark-premium">
+        <div class="card-header-dark">
             <div class="bg-success text-white rounded p-2 mr-3 d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">
                 <i class="fas fa-cash-register"></i>
             </div>
-            <h3 class="section-title">Liquidación Financiera (Caja Física)</h3>
+            <h3 class="dark-section-title">Liquidación Financiera (Caja Física)</h3>
         </div>
-        <div class="card-body bg-white py-4 rounded-bottom">
-            {{-- Usamos row y col para asegurar que no se estire excesivamente --}}
+        <div class="card-body py-4">
             <div class="row align-items-center justify-content-center text-center">
                 
-                <div class="col-md-2 col-sm-6 mb-3">
-                    <p class="label-title text-uppercase font-weight-bold mb-1">Base Inicial</p>
-                    <h4 class="amount-display text-dark mb-0">${{ number_format($baseInicial ?? 0, 0, ',', '.') }}</h4>
+                {{-- Base Inicial --}}
+                <div class="col-md-2 col-6 mb-3">
+                    <div class="dark-label-title">Base Inicial</div>
+                    <div class="dark-amount-display dark-text-base">${{ number_format($baseInicial ?? 0, 0, ',', '.') }}</div>
                 </div>
 
-                <div class="col-auto mb-3 d-none d-md-block"><span class="math-operator">-</span></div>
+                <div class="col-auto mb-3 d-none d-md-block"><span class="dark-math-operator" style="color: #34D399;">+</span></div>
 
-                <div class="col-md-2 col-sm-6 mb-3">
-                    <p class="label-title text-uppercase font-weight-bold mb-1">Sueldo Cajero</p>
-                    <h4 class="amount-display text-danger mb-0">-${{ number_format($sueldo, 0, ',', '.') }}</h4>
+                {{-- Efectivo Ingresado --}}
+                <div class="col-md-2 col-6 mb-3">
+                    <div class="dark-label-title">Efectivo Ingresado</div>
+                    <div class="dark-amount-display dark-text-success">+${{ number_format($totalEfectivo ?? 0, 0, ',', '.') }}</div>
                 </div>
 
-                <div class="col-auto mb-3 d-none d-md-block"><span class="math-operator">-</span></div>
+                <div class="col-auto mb-3 d-none d-md-block"><span class="dark-math-operator">-</span></div>
 
-                <div class="col-md-2 col-sm-6 mb-3">
-                    <p class="label-title text-uppercase font-weight-bold mb-1">Gastos / Compras</p>
-                    <h4 class="amount-display text-danger mb-0">-${{ number_format($totalGastos, 0, ',', '.') }}</h4>
+                {{-- Sueldo Cajero --}}
+                <div class="col-md-2 col-6 mb-3">
+                    <div class="dark-label-title">Sueldo Cajero</div>
+                    <div class="dark-amount-display dark-text-danger">-${{ number_format($sueldo ?? 0, 0, ',', '.') }}</div>
                 </div>
 
-                <div class="col-auto mb-3 d-none d-md-block"><span class="math-operator">-</span></div>
+                <div class="col-auto mb-3 d-none d-md-block"><span class="dark-math-operator">-</span></div>
 
-                <div class="col-md-2 col-sm-6 mb-3">
-                    <p class="label-title text-uppercase font-weight-bold mb-1">Fondo Sig. Turno</p>
-                    <h4 class="amount-display text-warning mb-0">-${{ number_format($baseSiguiente, 0, ',', '.') }}</h4>
+                {{-- Gastos --}}
+                <div class="col-md-2 col-6 mb-3">
+                    <div class="dark-label-title">Gastos / Compras</div>
+                    <div class="dark-amount-display dark-text-danger">-${{ number_format($totalGastos ?? 0, 0, ',', '.') }}</div>
                 </div>
 
-                <div class="col-auto mb-3 d-none d-lg-block"><span class="math-operator text-dark">=</span></div>
+                <div class="col-auto mb-3 d-none d-md-block"><span class="dark-math-operator">-</span></div>
 
-                <div class="col-lg-3 col-md-6 col-sm-12 mt-3 mt-lg-0">
-                    <div class="px-4 py-3 rounded shadow-sm" style="background-color: #f0fdf4; border: 2px solid #28a745;">
-                        <p class="text-success text-uppercase font-weight-bold mb-1" style="font-size: 0.9rem;">Efectivo a Entregar</p>
-                        <h1 class="amount-display amount-total mb-0">${{ number_format($dineroEntregado, 0, ',', '.') }}</h1>
+                {{-- Fondo Sig. Turno --}}
+                <div class="col-md-2 col-6 mb-3">
+                    <div class="dark-label-title">Fondo Sig. Turno</div>
+                    <div class="dark-amount-display dark-text-warning">-${{ number_format($baseSiguiente ?? 0, 0, ',', '.') }}</div>
+                </div>
+
+                <div class="col-auto mb-3 d-none d-lg-block"><span class="dark-math-operator" style="color: #10B981;">=</span></div>
+
+                {{-- Efectivo a Entregar --}}
+                <div class="col-lg-3 col-md-6 col-12 mt-3 mt-lg-0">
+                    <div class="glowing-box">
+                        <div class="glowing-label">Efectivo a Entregar</div>
+                        <div class="glowing-amount">${{ number_format($dineroEntregado ?? 0, 0, ',', '.') }}</div>
                     </div>
                 </div>
 
@@ -154,15 +246,15 @@
     {{-- 3. AUDITORÍA DE INVENTARIO --}}
     <div class="card card-custom">
         <div class="card-header-custom d-flex align-items-center">
-            <div class="bg-dark text-white rounded p-2 mr-3 d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">
-                <i class="fas fa-boxes"></i>
+            <div class="bg-primary text-white rounded p-1 mr-2 d-inline-flex justify-content-center align-items-center" style="width: 32px; height: 32px;">
+                <i class="fas fa-boxes" style="font-size: 0.9rem;"></i>
             </div>
             <h3 class="section-title">Auditoría de Inventario</h3>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover table-modern text-center">
-                    <thead class="bg-light">
+                    <thead class="thead-light">
                         <tr>
                             <th class="text-left pl-4">Producto</th>
                             <th>Stock Teórico (Sistema)</th>
@@ -174,11 +266,11 @@
                     <tbody>
                         @forelse($detallesTurno as $item)
                             @php
-                                $fisico = $item->stock_fisico_cierre !== null ? $item->stock_fisico_cierre : $item->stock_esperado;
+                                $fisico = $item->stock_fisico_cierre !== null ? $item->stock_fisico_cierre : ($item->stock_esperado ?? 0);
                                 $diferencia = $fisico - ($item->stock_esperado ?? 0);
                             @endphp
                             <tr>
-                                <td class="text-left pl-4 font-weight-bold">{{ $item->producto->nombre ?? 'Producto' }}</td>
+                                <td class="text-left pl-4 font-weight-bold">{{ $item->producto->nombre ?? 'Producto' }} <span class="text-secondary font-weight-bold" style="font-size: 0.85rem;">({{ $item->producto->categoria->nombre ?? 'Sin Categoría' }})</span></td>
                                 <td><span class="text-muted">{{ $item->stock_esperado ?? 0 }}</span></td>
                                 <td><span class="badge badge-secondary px-3 py-2" style="font-size: 0.9rem;">{{ $fisico }}</span></td>
                                 <td>
@@ -188,11 +280,11 @@
                                 </td>
                                 <td>
                                     @if($diferencia < 0)
-                                        <span class="badge badge-soft-danger px-3 py-2"><i class="fas fa-exclamation-circle mr-1"></i> Faltante</span>
+                                        <span class="badge badge-saas-danger px-2 py-1"><i class="fas fa-exclamation-circle mr-1"></i> Faltante</span>
                                     @elseif($diferencia > 0)
-                                        <span class="badge badge-soft-warning px-3 py-2"><i class="fas fa-exclamation-triangle mr-1"></i> Sobrante</span>
+                                        <span class="badge badge-saas-warning px-2 py-1"><i class="fas fa-exclamation-triangle mr-1"></i> Sobrante</span>
                                     @else
-                                        <span class="badge badge-soft-success px-3 py-2"><i class="fas fa-check-circle mr-1"></i> Cuadre Exacto</span>
+                                        <span class="badge badge-saas-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i> Exacto</span>
                                     @endif
                                 </td>
                             </tr>
@@ -209,13 +301,13 @@
     <div class="row">
         @foreach($categorias as $categoria)
             <div class="col-lg-6 col-12 mb-4">
-                <div class="card card-custom h-100 shadow-sm border-0">
-                    <div class="card-header-custom d-flex justify-content-between align-items-center bg-white border-bottom">
+                <div class="card card-custom h-100">
+                    <div class="card-header-custom d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center">
                             <span class="bg-primary text-white rounded p-1 mr-2 d-inline-flex justify-content-center align-items-center" style="width: 32px; height: 32px;">
                                 <i class="fas fa-tags" style="font-size: 0.9rem;"></i>
                             </span>
-                            <h3 class="section-title text-dark mb-0 font-weight-bold" style="font-size: 0.95rem;">
+                            <h3 class="section-title">
                                 VENTA DE {{ strtoupper($categoria->nombre) }}
                             </h3>
                         </div>
@@ -225,7 +317,7 @@
                                     <i class="fas fa-percent mr-1"></i> Ahorro: -${{ number_format($categoria->total_descuento, 0, ',', '.') }}
                                 </span>
                             @endif
-                            <span class="badge badge-soft-success font-weight-bold px-2 py-1" style="font-size: 0.95rem;">
+                            <span class="badge badge-light font-weight-bold px-2 py-1" style="font-size: 0.9rem;">
                                 Total: ${{ number_format($categoria->total_vendido ?? 0, 0, ',', '.') }}
                             </span>
                         </div>
@@ -233,7 +325,7 @@
                     <div class="card-body p-0">
                         <div class="table-responsive">
                             <table class="table table-hover table-modern text-center mb-0">
-                                <thead class="bg-light">
+                                <thead class="thead-light">
                                     <tr>
                                         <th class="text-left pl-3" style="width: 28%;">Producto</th>
                                         <th style="width: 10%;">Cant.</th>
@@ -253,15 +345,15 @@
                                                 <span class="badge badge-soft-info px-2 py-1 font-weight-bold">{{ $item->cantidad }}</span>
                                             </td>
                                             <td class="text-muted">
-                                                ${{ number_format($item->precio_unitario, 0, ',', '.') }}
+                                                ${{ number_format($item->precio_unitario ?? 0, 0, ',', '.') }}
                                             </td>
                                             <td>
-                                                @if($item->descuento > 0)
-                                                    <span class="badge badge-warning font-weight-bold px-2 py-1 text-dark">
+                                                @if(($item->descuento ?? 0) > 0)
+                                                    <span class="badge badge-saas-warning font-weight-bold px-2 py-1 text-dark">
                                                         <i class="fas fa-tag mr-1"></i>Promo (-${{ number_format($item->descuento, 0, ',', '.') }})
                                                     </span>
-                                                @elseif($item->tiene_promo)
-                                                    <span class="badge badge-warning font-weight-bold px-2 py-1 text-dark">
+                                                @elseif($item->tiene_promo ?? false)
+                                                    <span class="badge badge-saas-warning font-weight-bold px-2 py-1 text-dark">
                                                         <i class="fas fa-tag mr-1"></i>Promo
                                                     </span>
                                                 @else
@@ -270,25 +362,25 @@
                                             </td>
                                             <td>
                                                 @if($item->metodo_pago === 'efectivo')
-                                                    <span class="badge badge-soft-success px-2 py-1 font-weight-bold text-success border border-success">
+                                                    <span class="badge badge-saas-success px-2 py-1">
                                                         <i class="fas fa-money-bill-wave mr-1"></i>Efectivo
                                                     </span>
                                                 @elseif(in_array($item->metodo_pago, ['transferencia', 'nequi']))
-                                                    <span class="badge badge-soft-info px-2 py-1 font-weight-bold text-primary border border-primary">
+                                                    <span class="badge badge-saas-info px-2 py-1">
                                                         <i class="fas fa-mobile-alt mr-1"></i>Transf.
                                                     </span>
                                                 @elseif($item->metodo_pago === 'fiado')
-                                                    <span class="badge badge-soft-danger px-2 py-1 font-weight-bold text-danger border border-danger">
+                                                    <span class="badge badge-saas-danger px-2 py-1">
                                                         <i class="fas fa-user-clock mr-1"></i>Fiado
                                                     </span>
                                                 @else
                                                     <span class="badge badge-light border px-2 py-1 text-dark font-weight-bold">
-                                                        {{ ucfirst($item->metodo_pago) }}
+                                                        {{ ucfirst($item->metodo_pago ?? 'Otro') }}
                                                     </span>
                                                 @endif
                                             </td>
-                                            <td class="text-right pr-3 font-weight-bold text-success amount-display" style="font-size: 1rem;">
-                                                ${{ number_format($item->subtotal, 0, ',', '.') }}
+                                            <td class="text-right pr-3 font-weight-bold amount-display" style="color: #059669;">
+                                                ${{ number_format($item->subtotal ?? 0, 0, ',', '.') }}
                                             </td>
                                         </tr>
                                     @empty
@@ -307,24 +399,24 @@
         @endforeach
     </div>
 
-    {{-- CONTROL DE FIADOS (Nuevos y Abonos) --}}
+    {{-- CONTROL DE FIADOS --}}
     <div class="row">
         {{-- Fiados Nuevos --}}
         <div class="col-md-6 mb-4">
-            <div class="card card-custom h-100 shadow-sm border-0">
-                <div class="card-header-custom d-flex justify-content-between align-items-center bg-white border-bottom">
+            <div class="card card-custom h-100">
+                <div class="card-header-custom d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center">
                         <span class="bg-danger text-white rounded p-1 mr-2 d-inline-flex justify-content-center align-items-center" style="width: 32px; height: 32px;">
                             <i class="fas fa-user-tag" style="font-size: 0.9rem;"></i>
                         </span>
-                        <h3 class="section-title text-danger mb-0" style="font-size: 0.95rem;">Fiados Nuevos (Otorgados en el Turno)</h3>
+                        <h3 class="section-title">Fiados Nuevos</h3>
                     </div>
-                    <span class="badge badge-soft-danger font-weight-bold px-2 py-1">Total: ${{ number_format($totalFiadoNuevo, 0, ',', '.') }}</span>
+                    <span class="badge badge-danger font-weight-bold px-2 py-1">Total: ${{ number_format($totalFiadoNuevo ?? 0, 0, ',', '.') }}</span>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover table-modern text-center mb-0">
-                            <thead class="bg-light">
+                            <thead class="thead-light">
                                 <tr>
                                     <th class="text-left pl-4">Cliente / Deudor</th>
                                     <th class="text-right pr-4">Deuda Generada</th>
@@ -335,7 +427,7 @@
                                     <tr>
                                         <td class="text-left pl-4 font-weight-bold text-dark">{{ $fiado->cliente_fiado ?? 'Sin Nombre' }}</td>
                                         <td class="text-right pr-4 text-danger font-weight-bold amount-display" style="font-size: 1.05rem;">
-                                            ${{ number_format($fiado->total, 0, ',', '.') }}
+                                            ${{ number_format($fiado->total ?? 0, 0, ',', '.') }}
                                         </td>
                                     </tr>
                                 @empty
@@ -350,20 +442,20 @@
 
         {{-- Abonos Fiados --}}
         <div class="col-md-6 mb-4">
-            <div class="card card-custom h-100 shadow-sm border-0">
-                <div class="card-header-custom d-flex justify-content-between align-items-center bg-white border-bottom">
+            <div class="card card-custom h-100">
+                <div class="card-header-custom d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center">
                         <span class="bg-success text-white rounded p-1 mr-2 d-inline-flex justify-content-center align-items-center" style="width: 32px; height: 32px;">
                             <i class="fas fa-hand-holding-usd" style="font-size: 0.9rem;"></i>
                         </span>
-                        <h3 class="section-title text-success mb-0" style="font-size: 0.95rem;">Abonos a Fiados (Ingreso a Caja)</h3>
+                        <h3 class="section-title">Abonos a Fiados (Ingreso a Caja)</h3>
                     </div>
-                    <span class="badge badge-soft-success font-weight-bold px-2 py-1">Total: ${{ number_format($totalCobradoFiados, 0, ',', '.') }}</span>
+                    <span class="badge badge-success font-weight-bold px-2 py-1">Total: ${{ number_format($totalCobradoFiados ?? 0, 0, ',', '.') }}</span>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover table-modern text-center mb-0">
-                            <thead class="bg-light">
+                            <thead class="thead-light">
                                 <tr>
                                     <th class="text-left pl-4">Cliente</th>
                                     <th>Medio</th>
@@ -375,14 +467,14 @@
                                     <tr>
                                         <td class="text-left pl-4 font-weight-bold text-dark">{{ $cobro->cliente_fiado ?? 'Cliente' }}</td>
                                         <td>
-                                            @if($cobro->metodo_pago_saldo === 'transferencia' || in_array($cobro->metodo_pago, ['transferencia', 'nequi']))
-                                                <span class="badge badge-soft-info text-primary border border-primary px-2 py-1 font-weight-bold">Transf.</span>
+                                            @if(($cobro->metodo_pago_saldo ?? '') === 'transferencia' || in_array($cobro->metodo_pago ?? '', ['transferencia', 'nequi']))
+                                                <span class="badge badge-saas-info px-2 py-1 font-weight-bold">Transf.</span>
                                             @else
-                                                <span class="badge badge-soft-success text-success border border-success px-2 py-1 font-weight-bold">Efectivo</span>
+                                                <span class="badge badge-saas-success px-2 py-1 font-weight-bold">Efectivo</span>
                                             @endif
                                         </td>
-                                        <td class="text-right pr-4 text-success font-weight-bold amount-display" style="font-size: 1.05rem;">
-                                            ${{ number_format($cobro->total, 0, ',', '.') }}
+                                        <td class="text-right pr-4 font-weight-bold amount-display" style="color: #059669; font-size: 1.05rem;">
+                                            ${{ number_format($cobro->total ?? 0, 0, ',', '.') }}
                                         </td>
                                     </tr>
                                 @empty
@@ -396,19 +488,32 @@
         </div>
     </div>
 
-    {{-- 5. OBSERVACIONES DEL TURNO --}}
-    @if(!empty($observaciones))
-    <div class="card card-custom mt-4 mb-5" style="border-left: 5px solid #6c757d; background-color: #fdfdfd;">
-        <div class="card-body">
-            <h5 class="font-weight-bold text-dark mb-3" style="font-size: 1.1rem;">
-                <i class="fas fa-comment-dots text-secondary mr-2"></i> Observaciones del Turno / Cierre
-            </h5>
-            <p class="mb-0 text-dark" style="white-space: pre-line; line-height: 1.6; font-size: 1rem;">
-                {{ $observaciones }}
-            </p>
+    {{-- 5. OBSERVACIONES Y NOVEDADES DEL TURNO --}}
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card card-custom">
+                <div class="card-header-custom d-flex align-items-center">
+                    <div class="bg-warning text-dark rounded p-1 mr-2 d-inline-flex justify-content-center align-items-center" style="width: 32px; height: 32px;">
+                        <i class="fas fa-comment-alt" style="font-size: 0.9rem;"></i>
+                    </div>
+                    <h3 class="section-title">Observaciones y Novedades del Turno</h3>
+                </div>
+                <div class="card-body p-3">
+                    <div class="p-3 bg-light rounded border text-dark">
+                        @if(!empty($observaciones ?? ($turno->observaciones ?? null)))
+                            <p class="mb-0 font-weight-normal" style="white-space: pre-line; font-size: 0.95rem; color: #334155; line-height: 1.5;">
+                                {{ $observaciones ?? $turno->observaciones }}
+                            </p>
+                        @else
+                            <p class="mb-0 text-muted font-italic" style="font-size: 0.9rem;">
+                                <i class="fas fa-info-circle mr-1"></i> No se registraron observaciones ni novedades en este turno.
+                            </p>
+                        @endif
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    @endif
 
 </div>
 @stop

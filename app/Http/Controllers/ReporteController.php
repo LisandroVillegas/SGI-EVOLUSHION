@@ -363,7 +363,7 @@ class ReporteController extends Controller
             'sueldo'               => $sueldo,
             'baseSiguiente'        => $baseSiguiente,
             'dineroEntregado'      => $dineroEntregado,
-            'observaciones'        => $turno->notas ?? null,
+            'observaciones'        => $turno->observaciones ?? null,
             'totalTransacciones'   => $ventas->count(),
             'promocionesAplicadas' => $ventas->where('aplica_promocion', true)->count(),
         ];

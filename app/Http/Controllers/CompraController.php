@@ -44,7 +44,7 @@ class CompraController extends Controller
             'productos.*.precio_compra' => 'required|numeric|min:0',
         ]);
 
-        DB::transaction(function () use ($request, $turnoActivo) {
+        DB::transaction(function () use ($request, &$turnoActivo) {
             $comprobante = $request->comprobante;
             if (empty($comprobante)) {
                 $ultimoId = Compra::max('id') ?? 0;
@@ -77,6 +77,10 @@ class CompraController extends Controller
                     $producto->increment('stock', $p['cantidad']);
                 }
             }
+
+            $hora = now()->format('H:i');
+            $turnoActivo->observaciones .= "\n• [{$hora}] Compra Registrada ({$comprobante}) por $" . number_format($total, 0, ',', '.');
+            $turnoActivo->save();
         });
 
         return redirect()->to('/admin/compras')
@@ -102,7 +106,7 @@ class CompraController extends Controller
             'fecha' => 'required|date',
         ]);
 
-        DB::transaction(function () use ($request, $turnoActivo) {
+        DB::transaction(function () use ($request, &$turnoActivo) {
             $ultimoId = Compra::max('id') ?? 0;
             $comprobante = 'COMP-' . str_pad($ultimoId + 1, 5, '0', STR_PAD_LEFT);
 
@@ -114,6 +118,10 @@ class CompraController extends Controller
                 'fecha' => $request->fecha,
                 'total' => $request->total,
             ]);
+
+            $hora = now()->format('H:i');
+            $turnoActivo->observaciones .= "\n• [{$hora}] Egreso/Compra Rápida: {$request->concepto} por $" . number_format($request->total, 0, ',', '.');
+            $turnoActivo->save();
         });
 
         return redirect()->to('/admin/compras')

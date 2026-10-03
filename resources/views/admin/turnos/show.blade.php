@@ -1,27 +1,17 @@
 @extends('adminlte::page')
 
-
+@section('title', 'Detalle del Turno')
 
 @section('content_header')
-
-<nav aria-label="breadcrumb" style="font-size: 18pt">
-
-  <ol class="breadcrumb">
-
-    <li class="breadcrumb-item"><a href="{{ url('/admin') }}">Inicio</a></li>
-
-    <li class="breadcrumb-item"><a href="{{ url('/admin/turnos') }}">Turnos</a></li>
-
-    <li class="breadcrumb-item active" aria-current="page">Detalle del Turno</li>
-
-  </ol>
-
-</nav>
-
-<hr>
-
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="m-0 text-dark font-weight-bold">
+        <i class="fas fa-cash-register text-primary mr-2"></i>Detalle del Turno
+    </h1>
+    <a href="{{ url('/admin/turnos') }}" class="btn btn-secondary font-weight-bold shadow-sm">
+        <i class="fas fa-arrow-left mr-1"></i> Volver a Turnos
+    </a>
+</div>
 @stop
-
 
 
 @section('content')
@@ -160,7 +150,7 @@
 
                             <label><strong>Notas y Resumen de Cierre del Turno:</strong></label>
 
-                            <textarea class="form-control bg-light" rows="6" readonly>{{ $turno->notas ?? 'Sin notas registradas.' }}</textarea>
+                            <div class="form-control bg-light" style="height: auto; min-height: 150px; white-space: pre-line; overflow-y: auto;">{{ $turno->observaciones ?? 'Sin notas registradas.' }}</div>
 
                         </div>
 

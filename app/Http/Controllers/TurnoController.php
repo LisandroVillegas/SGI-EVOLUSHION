@@ -51,7 +51,7 @@ class TurnoController extends Controller
     {
         $request->validate([
             'base_caja' => 'required|numeric|min:0',
-            'notas' => 'nullable|string',
+            'observaciones' => 'nullable|string',
             'reporte_inventario' => 'nullable|string',
             'productos' => 'required|array',
             'productos.*.id' => 'required|exists:productos,id',
@@ -73,8 +73,8 @@ class TurnoController extends Controller
 
             $notasApertura = $request->input('reporte_inventario', 'Apertura de turno sin novedades en inventario.');
 
-            if ($request->filled('notas')) {
-                $notasApertura .= "\n\nObservaciones Adicionales: " . $request->notas;
+            if ($request->filled('observaciones')) {
+                $notasApertura .= "\n\nObservaciones Adicionales: " . $request->observaciones;
             }
 
             $turno = new Turno();
@@ -82,7 +82,7 @@ class TurnoController extends Controller
             $turno->fecha_inicio = Carbon::now();
             $turno->base_caja = $request->base_caja;
             $turno->estado = 'abierto';
-            $turno->notas = $notasApertura;
+            $turno->observaciones = $notasApertura;
             $turno->save();
 
             foreach ($request->productos as $prod) {
@@ -277,13 +277,12 @@ class TurnoController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'total_efectivo_real' => 'required',
-            'pago_trabajadora' => 'nullable',
-            'sueldo' => 'nullable',
-            'base_siguiente_turno' => 'nullable|numeric|min:0',
-            'productos' => 'required|array',
-            'reporte_descuadre_cierre' => 'required|string',
-            'notas_cajero' => 'nullable|string',
+            'total_efectivo_real'   => 'required',
+            'pago_trabajadora'      => 'nullable',
+            'sueldo'                => 'nullable',
+            'base_siguiente_turno'  => 'nullable|numeric|min:0',
+            'productos'             => 'required|array',
+            'notas_cajero'          => 'nullable|string',
         ]);
 
         try {
@@ -358,81 +357,69 @@ class TurnoController extends Controller
             $dineroEsperado = ($turno->base_caja + $totalVentasEfectivo + $totalFiadoCobrado) - $totalCompras - $pagoTrabajadora - $baseSiguienteTurno;
             $diferenciaEfectivo = $efectivoReal - $dineroEsperado;
 
-            // GENERACIÓN ESTRICTA DEL REPORTE EN EL BACKEND (Seguridad anti-manipulación)
-            $notasCierre = "RESUMEN FINANCIERO DEL TURNO:\n";
-            $notasCierre .= "--------------------------------\n";
-            $notasCierre .= "(+) Base Inicial: $" . number_format($turno->base_caja, 0, ',', '.') . "\n";
-            $notasCierre .= "(+) Ventas en Efectivo: $" . number_format($totalVentasEfectivo, 0, ',', '.') . "\n";
-            if ($totalFiadoCobrado > 0) {
-                $notasCierre .= "(+) Abonos a Fiados (Caja): $" . number_format($totalFiadoCobrado, 0, ',', '.') . "\n";
-            }
-            $notasCierre .= "(-) Compras / Egresos: $" . number_format($totalCompras, 0, ',', '.') . "\n";
-            if ($pagoTrabajadora > 0) {
-                $notasCierre .= "(-) Pago a Trabajadora / Sueldo: $" . number_format($pagoTrabajadora, 0, ',', '.') . "\n";
-            }
-            if ($baseSiguienteTurno > 0) {
-                $notasCierre .= "(-) Base para el Siguiente Turno: $" . number_format($baseSiguienteTurno, 0, ',', '.') . "\n";
-            }
-            $notasCierre .= "--------------------------------\n";
-            $notasCierre .= "(=) DINERO ESPERADO EN CAJA: $" . number_format($dineroEsperado, 0, ',', '.') . "\n";
-            $notasCierre .= "(=) EFECTIVO REAL CONTADO: $" . number_format($efectivoReal, 0, ',', '.') . "\n\n";
+            $horaCierre = now()->format('H:i');
 
-            if ($dineroEsperado < 0) {
-                $notasCierre .= "ADVERTENCIA: Los egresos y sueldos superan el efectivo disponible en caja.\n\n";
-            }
+            // 1. BASE: La base ya no se toma del request sino directamente de la DB (ver abajo) para que sea inalterable.
 
-            if ($diferenciaEfectivo < -0.01) {
-                $notasCierre .= "- FALTANTE DE DINERO EN CAJA: -$" . number_format(abs($diferenciaEfectivo), 0, ',', '.') . "\n";
-            } elseif ($diferenciaEfectivo > 0.01) {
-                $notasCierre .= "- SOBRANTE DE DINERO EN CAJA: +$" . number_format($diferenciaEfectivo, 0, ',', '.') . "\n";
-            } else {
-                $notasCierre .= "- CAJA CUADRADA CORRECTAMENTE\n";
-            }
-
-            $notasCierre .= "\nDETALLE DE INVENTARIO Y EGRESOS:\n";
-            $hayNovedades = false;
-
-            if ($turno->compras) {
-                foreach ($turno->compras->where('tipo', 'rapida') as $egreso) {
-                    $notasCierre .= "- EGRESO / COMPRA RÁPIDA: " . ($egreso->concepto ?? 'Sin concepto') . " ($" . number_format($egreso->total, 0, ',', '.') . ")\n";
-                    $hayNovedades = true;
-                }
-            }
-
+            // 2. APPENDAR diferencias de inventario detectadas en el cierre (calculadas por el backend)
+            $lineasInventarioCierre = [];
             foreach ($request->productos as $prod) {
-                $detalle = TurnoDetalle::with('producto')->where('turno_id', $turno->id)->where('producto_id', $prod['id'])->first();
-                if ($detalle && isset($detalle->diferencia_cierre)) {
-                    $dif = $detalle->diferencia_cierre;
+                $det = TurnoDetalle::with('producto')
+                    ->where('turno_id', $turno->id)
+                    ->where('producto_id', $prod['id'])
+                    ->first();
+                if ($det && $det->diferencia_cierre !== null && $det->diferencia_cierre != 0) {
+                    $dif        = $det->diferencia_cierre;
+                    $nombreProd = $det->producto->nombre ?? 'Producto';
                     if ($dif < 0) {
-                        $notasCierre .= "- FALTANTE EN CIERRE: " . ($detalle->producto->nombre ?? 'Producto') . " (" . abs($dif) . " und)\n";
-                        $hayNovedades = true;
-                    } elseif ($dif > 0) {
-                        $notasCierre .= "- SOBRANTE EN CIERRE: " . ($detalle->producto->nombre ?? 'Producto') . " (+" . $dif . " und)\n";
-                        $hayNovedades = true;
+                        $lineasInventarioCierre[] = "• [{$horaCierre}] INVENTARIO — Faltante: {$nombreProd} (" . abs($dif) . " und)";
+                    } else {
+                        $lineasInventarioCierre[] = "• [{$horaCierre}] INVENTARIO — Sobrante: {$nombreProd} (+{$dif} und)";
                     }
                 }
             }
 
-            if (!$hayNovedades) {
-                $notasCierre .= "- Sin novedades de inventario ni egresos.\n";
+            // 3. APPENDAR resumen financiero generado en el backend (cifras reales, no manipulables)
+            $resumenCierre  = "\n\n--- RESUMEN DE CIERRE [{$horaCierre}] ---\n";
+            $resumenCierre .= "(+) Base Inicial:             $" . number_format($turno->base_caja, 0, ',', '.') . "\n";
+            $resumenCierre .= "(+) Ventas en Efectivo:       $" . number_format($totalVentasEfectivo, 0, ',', '.') . "\n";
+            if ($totalFiadoCobrado > 0) {
+                $resumenCierre .= "(+) Cobro de Fiados (Caja):   $" . number_format($totalFiadoCobrado, 0, ',', '.') . "\n";
+            }
+            $resumenCierre .= "(-) Compras / Egresos:        $" . number_format($totalCompras, 0, ',', '.') . "\n";
+            if ($pagoTrabajadora > 0) {
+                $resumenCierre .= "(-) Pago a Trabajadora:       $" . number_format($pagoTrabajadora, 0, ',', '.') . "\n";
+            }
+            if ($baseSiguienteTurno > 0) {
+                $resumenCierre .= "(-) Fondo Siguiente Turno:    $" . number_format($baseSiguienteTurno, 0, ',', '.') . "\n";
+            }
+            $resumenCierre .= "(=) Esperado en Caja:         $" . number_format($dineroEsperado, 0, ',', '.') . "\n";
+            $resumenCierre .= "(=) Contado Real:             $" . number_format($efectivoReal, 0, ',', '.') . "\n";
+
+            if ($diferenciaEfectivo < -0.01) {
+                $resumenCierre .= "⚠ FALTANTE DE CAJA:         -$" . number_format(abs($diferenciaEfectivo), 0, ',', '.') . "\n";
+            } elseif ($diferenciaEfectivo > 0.01) {
+                $resumenCierre .= "✓ SOBRANTE DE CAJA:         +$" . number_format($diferenciaEfectivo, 0, ',', '.') . "\n";
+            } else {
+                $resumenCierre .= "✓ CAJA CUADRADA CORRECTAMENTE\n";
             }
 
+            $resumenCierre .= "---\n";
+
+            // 4. Notas del Cajero
+            $notasCajeroBloque = "";
             if ($request->filled('notas_cajero')) {
-                $notasCierre .= "\nObservaciones del Cajero:\n" . $request->notas_cajero . "\n";
+                $notasCajeroBloque = "\n\n--- OBSERVACIONES DEL CAJERO ---\n" . trim($request->notas_cajero);
             }
 
-            // Concatenar notas de apertura si las hay
-            $notasFinales = "";
-            $notasAperturaOriginales = $turno->notas;
-            // Evitar duplicar "=== NOTAS / APERTURA ===" si ya estaba
-            if (!empty($notasAperturaOriginales)) {
-                if (strpos($notasAperturaOriginales, '=== NOTAS / APERTURA ===') === false) {
-                    $notasFinales .= "=== NOTAS / APERTURA ===\n" . $notasAperturaOriginales . "\n\n";
-                } else {
-                    $notasFinales .= $notasAperturaOriginales . "\n\n";
-                }
+            // 5. Construir el texto final: Historial del sistema + Inventario + Resumen + Notas Cajero
+            $historialBase = trim($turno->observaciones ?? '');
+            
+            $notasFinales = $historialBase;
+            if (!empty($lineasInventarioCierre)) {
+                $notasFinales .= "\n" . implode("\n", $lineasInventarioCierre);
             }
-            $notasFinales .= "=== CIERRE DE TURNO ===\n" . $notasCierre;
+            $notasFinales .= $resumenCierre . $notasCajeroBloque;
 
             $estadoTurno = abs($diferenciaEfectivo) < 0.01 ? 'cerrado_ok' : 'cerrado_descuadre';
 
@@ -444,7 +431,7 @@ class TurnoController extends Controller
                 'estado' => $estadoTurno,                      
                 'sueldo' => $pagoTrabajadora,
                 'base_siguiente_turno' => $baseSiguienteTurno,                      
-                'notas' => $notasFinales,
+                'observaciones' => $notasFinales,
             ]);
 
             DB::commit();
@@ -556,7 +543,7 @@ class TurnoController extends Controller
                                 $detallePromo . " | Total: $" . number_format($subtotal, 0, ',', '.') . 
                                 " (" . ucfirst($metodo) . ")" . $motivoTexto;
 
-            $turno->notas = trim(($turno->notas ?? '') . " " . $lineaObservacion);
+            $turno->observaciones = trim(($turno->observaciones ?? '') . " " . $lineaObservacion);
             $turno->save();
 
             $detalleTurno = TurnoDetalle::where('turno_id', $turno->id)

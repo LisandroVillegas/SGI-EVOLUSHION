@@ -1,99 +1,74 @@
-@extends('adminlte::page')
+﻿@extends('adminlte::page')
 
-
+@section('title', 'Nueva Categoría')
 
 @section('content_header')
-<nav aria-label="breadcrumb" style="font-size: 18pt">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{{ url('/admin') }}">Inicio</a></li>
-    <li class="breadcrumb-item"><a href="{{ url('/admin/categorias') }}">Categorias</a></li>
-    <li class="breadcrumb-item active" aria-current="page">Creacion de Categorias</li>
-  </ol>
-</nav>
-<hr>
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="m-0 text-dark font-weight-bold">
+        <i class="fas fa-plus-circle text-primary mr-2"></i>Nueva Categoría
+    </h1>
+    <a href="{{ url('/admin/categorias') }}" class="btn btn-secondary font-weight-bold shadow-sm">
+        <i class="fas fa-arrow-left mr-1"></i> Volver al listado
+    </a>
+</div>
 @stop
 
 @section('content')
-<div class="row">
-    <div class="col-md-4">
-                <div class="card  card-primary">
-                  <div class="card-header">
-                    <h3 class="card-title">Llenar Datos de Formulario</h3>
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8 col-sm-12">
+        <div class="card card-outline card-primary shadow-sm">
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold">
+                    <i class="fas fa-tags mr-2 text-primary"></i>Datos de la Categoría
+                </h3>
+            </div>
+            <div class="card-body">
+                <form action="{{ url('/admin/categorias/create') }}" method="POST">
+                    @csrf
 
-                    
-                    <!-- /.card-tools -->
-                  </div>
-                  <!-- /.card-header -->
-                  <div class="card-body" style="box-sizing: border-box; display: block;">
-                    <form action="{{ url('/admin/categorias/create')  }}" method="POST">
-                        @csrf
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <label for="nombre">Nombre de la Categoria <b style="color: red">(*)</b></label>
-                                    <div class="input-group mb-3">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text"><i class="fas fa-tags"></i></span>
-
-                                        </div>
-                                        <input type="text" value="{{ old('nombre') }}" class="form-control" id="nombre" name="nombre" 
-                                        placeholder="Ingrese el nombre de la Categoria" required>
-
-                                    </div>
-                                    @error('nombre')
-                                    <small style="color:red">{{ $message }}</small>
-                                    @enderror
-                                    
-                                    
-
-
-                                </div>
+                    <div class="form-group">
+                        <label for="nombre">
+                            <i class="fas fa-tag mr-1 text-muted"></i>
+                            Nombre <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fas fa-tags"></i></span>
                             </div>
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <label for="nombre">Descripción de la Categoria (opcional)</label>
-                                    <textarea class="form-control" name="descripcion" id="descripcion" rows="3" 
-                                    placeholder="Ingrese una breve descripción de la Categoria">{{ old('descripcion') }}</textarea>
-                                   
-                                </div>
-                            </div>
+                            <input type="text" id="nombre" name="nombre"
+                                   class="form-control @error('nombre') is-invalid @enderror"
+                                   placeholder="Ej: Cócteles, Nevera, Insumos..."
+                                   value="{{ old('nombre') }}" required>
+                            @error('nombre')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
                         </div>
-                        <hr>
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <a href="{{ url('/admin/categorias') }}" class="btn btn-secondary ">Cancelar</a>
-                                <button type="submit" class="btn btn-primary ">Guardar</button>
-                                </div>
-                                
-                        
-                            </div>
+                    </div>
 
+                    <div class="form-group">
+                        <label for="descripcion">
+                            <i class="fas fa-align-left mr-1 text-muted"></i>
+                            Descripción <small class="text-muted">(opcional)</small>
+                        </label>
+                        <textarea class="form-control" name="descripcion" id="descripcion" rows="3"
+                                  placeholder="Ingrese una breve descripción de la categoría">{{ old('descripcion') }}</textarea>
+                    </div>
+
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted"><span class="text-danger">*</span> Campos obligatorios</small>
+                        <div>
+                            <a href="{{ url('/admin/categorias') }}" class="btn btn-secondary mr-2">
+                                <i class="fas fa-times mr-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary font-weight-bold">
+                                <i class="fas fa-save mr-1"></i> Guardar Categoría
+                            </button>
                         </div>
-
-
-
-
-
-
-                    </form>
-                    
-
-                   
-                  </div>
-                  <!-- /.card-body -->
-                </div>
-                <!-- /.card -->
-              </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
-   
-@stop
-
-@section('css')
-    
-
-@stop
-
-@section('js')
-   
 @stop

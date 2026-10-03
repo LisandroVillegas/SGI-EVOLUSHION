@@ -3,14 +3,14 @@
 @section('title', 'Detalle de Venta #' . $venta->id)
 
 @section('content_header')
-<nav aria-label="breadcrumb" style="font-size: 16pt">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{{ url('/admin') }}">Inicio</a></li>
-    <li class="breadcrumb-item"><a href="{{ url('/admin/ventas') }}">Historial de Ventas</a></li>
-    <li class="breadcrumb-item active" aria-current="page">Venta #{{ $venta->id }}</li>
-  </ol>
-</nav>
-<hr class="mt-0">
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="m-0 text-dark font-weight-bold">
+        <i class="fas fa-receipt text-warning mr-2"></i>Comprobante de Venta #{{ sprintf('%06d', $venta->id) }}
+    </h1>
+    <a href="{{ url('/admin/ventas') }}" class="btn btn-secondary font-weight-bold shadow-sm">
+        <i class="fas fa-arrow-left mr-1"></i> Volver al Historial
+    </a>
+</div>
 @stop
 
 @section('content')

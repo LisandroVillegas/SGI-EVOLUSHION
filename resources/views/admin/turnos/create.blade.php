@@ -1,15 +1,18 @@
 @extends('adminlte::page')
 
+@section('title', 'Abrir Turno')
+
 @section('content_header')
-<nav aria-label="breadcrumb" style="font-size: 18pt">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{{ url('/admin') }}">Inicio</a></li>
-    <li class="breadcrumb-item"><a href="{{ url('/admin/turnos') }}">Turnos</a></li>
-    <li class="breadcrumb-item active" aria-current="page">Abrir Turno</li>
-  </ol>
-</nav>
-<hr>
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="m-0 text-dark font-weight-bold">
+        <i class="fas fa-play-circle text-success mr-2"></i>Apertura de Turno
+    </h1>
+    <a href="{{ url('/admin/turnos') }}" class="btn btn-secondary font-weight-bold shadow-sm">
+        <i class="fas fa-arrow-left mr-1"></i> Volver a Turnos
+    </a>
+</div>
 @stop
+
 
 @section('content')
 <form action="{{ url('/admin/turnos') }}" method="POST" id="form-abrir-turno">
@@ -56,12 +59,12 @@
 
                     {{-- Campo libre de observaciones opcionales --}}
                     <div class="form-group mb-0">
-                        <label for="notas" class="small font-weight-bold text-dark">
+                        <label for="observaciones" class="small font-weight-bold text-dark">
                             Observaciones / Novedades Adicionales <span class="text-muted font-weight-normal">(Opcional)</span>
                         </label>
-                        <textarea name="notas" id="notas" rows="3" class="form-control form-control-sm @error('notas') is-invalid @enderror" 
-                                  placeholder="Escribe aquí cualquier otra observación adicional...">{{ old('notas') }}</textarea>
-                        @error('notas')
+                        <textarea name="observaciones" id="observaciones" rows="3" class="form-control form-control-sm @error('observaciones') is-invalid @enderror" 
+                                  placeholder="Escribe aquí cualquier otra observación adicional...">{{ old('observaciones') }}</textarea>
+                        @error('observaciones')
                             <small class="text-danger font-weight-bold">{{ $message }}</small>
                         @enderror
                     </div>

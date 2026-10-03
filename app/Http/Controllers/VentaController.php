@@ -84,6 +84,7 @@ class VentaController extends Controller
             $totalVenta = 0;
             $detallesParaGuardar = [];
             $resumenProductosTexto = [];
+            $descuentoTotalVenta = 0;
             
             $aplicaPromo = filter_var($request->aplica_promocion, FILTER_VALIDATE_BOOLEAN);
 
@@ -115,8 +116,9 @@ class VentaController extends Controller
 
                 if ($aplicaPromo && $promocion && $item['cantidad'] >= $promocion->cantidad_minima) {
                     $grupos = floor($item['cantidad'] / $promocion->cantidad_minima);
-                    $descuentoTotal = $grupos * $promocion->descuento;
-                    $subtotal -= $descuentoTotal;
+                    $descuentoItem = $grupos * $promocion->descuento;
+                    $subtotal -= $descuentoItem;
+                    $descuentoTotalVenta += $descuentoItem;
                 }
 
                 $totalVenta += $subtotal;
@@ -172,12 +174,21 @@ class VentaController extends Controller
                 $det['producto']->decrement('stock', $det['cantidad']);
             }
 
+            $prodsStr = implode(', ', $resumenProductosTexto);
+            $hora = now()->format('H:i');
+            
             if ($request->metodo_pago === 'fiado') {
-                $prodsStr = implode(', ', $resumenProductosTexto);
-                $notaFiado = "\n- [VENTA FIADA] Cliente: {$clienteFiado} | Total: $" . number_format($totalVenta, 0, ',', '.') . " | Productos: {$prodsStr}.";
-                $turnoActivo->notas .= $notaFiado;
-                $turnoActivo->save();
+                $notaVenta = "\n• [{$hora}] VENTA FIADA: Cliente: {$clienteFiado} | Total: $" . number_format($totalVenta, 0, ',', '.') . " | Productos: {$prodsStr}.";
+            } else {
+                $metodoTexto = strtoupper($request->metodo_pago);
+                $promoStr = ($aplicaPromo && $descuentoTotalVenta > 0)
+                    ? " (Ahorro Promo: -$" . number_format($descuentoTotalVenta, 0, ',', '.') . ")"
+                    : "";
+                $notaVenta = "\n• [{$hora}] Venta Registrada ({$metodoTexto}): Total: $" . number_format($totalVenta, 0, ',', '.') . "{$promoStr} | Productos: {$prodsStr}.";
             }
+            
+            $turnoActivo->observaciones .= $notaVenta;
+            $turnoActivo->save();
 
             DB::commit();
 
@@ -249,7 +260,7 @@ class VentaController extends Controller
             $metodoTexto = strtoupper($metodo);
             $notaPagoFiado = "\n- [INGRESO FIADO] Cliente: {$clienteNombre} | Monto: $" . number_format($monto, 0, ',', '.') . " ({$metodoTexto}).";
             
-            $turnoActivo->notas .= $notaPagoFiado;
+            $turnoActivo->observaciones .= $notaPagoFiado;
             $turnoActivo->save();
 
             DB::commit();

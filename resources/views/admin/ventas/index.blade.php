@@ -13,10 +13,15 @@
 
 @section('content')
 <div class="card card-outline card-primary shadow-sm">
+    <div class="card-header">
+        <h3 class="card-title font-weight-bold m-0">
+            <i class="fas fa-list mr-2 text-primary"></i>Historial de Ventas
+        </h3>
+    </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-bordered table-striped table-hover align-middle" id="tablaVentas">
-                <thead class="bg-light">
+            <table class="table table-bordered table-striped table-hover text-center align-middle" id="tablaVentas">
+                <thead class="thead-dark">
                     <tr>
                         <th style="width: 50px;" class="text-center">#</th>
                         <th>Fecha y Hora</th>
@@ -156,18 +161,13 @@
 </div>
 @stop
 
+@include('admin.partials._datatables', ['tableId' => 'tablaVentas', 'entidad' => 'Ventas', 'conBotones' => true])
+
 @section('js')
 @include('admin.partials.pin-security')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     $(document).ready(function() {
-        $('#tablaVentas').DataTable({
-            "language": {
-                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Spanish.json"
-            },
-            "order": [[ 0, "desc" ]]
-        });
-
         $(document).on('click', '.btn-saldar-deuda', function() {
             let id = $(this).data('id');
             let cliente = $(this).data('cliente');

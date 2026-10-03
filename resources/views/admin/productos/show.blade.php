@@ -1,14 +1,16 @@
 @extends('adminlte::page')
 
+@section('title', 'Detalle del Producto')
+
 @section('content_header')
-<nav aria-label="breadcrumb" style="font-size: 18pt">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{{ url('/admin') }}">Inicio</a></li>
-    <li class="breadcrumb-item"><a href="{{ url('/admin/productos') }}">Productos</a></li>
-    <li class="breadcrumb-item active" aria-current="page">Datos de los Productos</li>
-  </ol>
-</nav>
-<hr>
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="m-0 text-dark font-weight-bold">
+        <i class="fas fa-box text-primary mr-2"></i>Detalle del Producto
+    </h1>
+    <a href="{{ url('/admin/productos') }}" class="btn btn-secondary font-weight-bold shadow-sm">
+        <i class="fas fa-arrow-left mr-1"></i> Volver a Productos
+    </a>
+</div>
 @stop
 
 @section('content')
